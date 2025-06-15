@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/imgs">
+        <file>ur5.png</file>
+        <file>down.png</file>
+        <file>up.png</file>
+        <file>left.png</file>
+        <file>right.png</file>
+        <file>robot.png</file>
+        <file>icon.png</file>
+        <file>stop.png</file>
+        <file>anti_focus.png</file>
+        <file>focus.png</file>
+        <file>left_down.png</file>
+        <file>left_up.png</file>
+        <file>right_down.png</file>
+        <file>right_up.png</file>
+        <file>take_picture.png</file>
+        <file>video.png</file>
+        <file>setting.png</file>
+        <file>voice.png</file>
+        <file>connection.png</file>
+        <file>robot.jpg</file>
+        <file>stop_off.png</file>
+    </qresource>
+</RCC>
