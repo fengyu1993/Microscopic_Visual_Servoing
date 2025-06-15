@@ -9,6 +9,8 @@
 #include <QMutex>
 #include <QVariantMap>
 #include <QVariant>
+#include <QFile>
+#include <QTextStream>
 
 #include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h>
