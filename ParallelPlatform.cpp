@@ -3,18 +3,16 @@
 #include "ParallelPlatform.h"
 #include "modern_robotic_lib.h"
 
-ParallelPlatform::ParallelPlatform(double dt)
+ParallelPlatform::ParallelPlatform(double hz)
 {
     // ID_ = "usb:id:1234567895";
-    this->dt_ = dt;
+    this->dt_ = 1 / hz;
     current_end_effector_pose_ = Eigen::VectorXd::Zero(6);
     this->b_T_e_= Eigen::Matrix4d::Identity();
 
     this->m_preciseTimer_ = new QTimer();
-    // QThread *preciseThread = new QThread(this);
     this->m_preciseTimer_->setInterval(this->dt_*1000);
     this-> m_preciseTimer_->setTimerType(Qt::PreciseTimer);
-    // this->m_preciseTimer_->moveToThread(preciseThread);
     QObject::connect(this->m_preciseTimer_, &QTimer::timeout, this, &ParallelPlatform::controller);
 
 
@@ -45,10 +43,11 @@ void ParallelPlatform::update()
     // 关于x y z rx ry rz的更新
     result_ = Narpod_GetPosition(ntHandle_,&positionx_,&positiony_,&positionz_,&rotationx_,&rotationy_,&rotationz_);
     Eigen::VectorXd Tlist(6);
-    Tlist << positionx_, positiony_, positiony_, positionz_, rotationx_, rotationy_, rotationz_;
+    Tlist(0) = positionx_; Tlist(1) = positiony_; Tlist(2) = positionz_;
+    Tlist(3) = rotationx_; Tlist(4) = rotationy_; Tlist(5) = rotationz_;
     b_T_e_ = currentPose_Mat_;
 
-    emit sig_updateRobotData(Tlist, targetVelocity_);
+    emit sig_updateRobotData(Tlist, targetVelocity_, currentPose_Vec_);
     // std::stringstream ss1;
     // ss1 << b_T_e_;
     // qDebug() << "b_T_e_:\n" << ss1.str().c_str();
@@ -59,7 +58,10 @@ void ParallelPlatform::update()
 
 void ParallelPlatform::controller()
 {
-    qDebug() << "controller thread ID:" << QThread::currentThreadId();
+    // qDebug() << "Robot thread ID:" << QThread::currentThreadId();
+    // qDebug() << "elapsed: " << cycleTimer.elapsed();
+    // qDebug() << "controlMode: " << this->controlMode_;
+
     if(this->controlMode_ == 0){
         targetPose_ = currentPose_Vec_;
         if (targetVelocity_.head(3).norm() <   epsilon_v_ && targetVelocity_.tail(3).norm()  < epsilon_w_)
@@ -74,12 +76,17 @@ void ParallelPlatform::controller()
     }else if(this->controlMode_ == 1){
         this->targetVelocity_ = Eigen::VectorXd::Zero(6);
         Eigen::VectorXd errorPose = currentPose_Vec_ - targetPose_;
-        if(errorPose.segment(0, 3).norm()  >=  epsilon_v_ || errorPose.segment(4, 3).norm()  >= epsilon_w_)
-        this->moveAbsolute(targetPose_(0),targetPose_(1),targetPose_(2),targetPose_(3),targetPose_(4),targetPose_(5));
+        if(errorPose.segment(0, 3).norm()  >=  epsilon_v_ || errorPose.segment(3, 3).norm()  >= epsilon_w_){
+            this->moveAbsolute(targetPose_(0),targetPose_(1),targetPose_(2),targetPose_(3),targetPose_(4),targetPose_(5));
+        }
     }
     else if(this->controlMode_ == 2){
         this->targetVelocity_ = Eigen::VectorXd::Zero(6);
         moveVelocity(this->targetVelocity_, this->dt_);
+    }
+    else if(this->controlMode_ == 3){
+        this->targetVelocity_ = Eigen::VectorXd::Zero(6);
+        moveAbsolute(0,0,0,0,0,0);
     }
     update();
 }
@@ -151,6 +158,7 @@ bool ParallelPlatform::findReferance()
 bool ParallelPlatform::startupdate()
 {
     this->m_preciseTimer_->start();
+    // this->cycleTimer.start();
     return 1;
 }
 
@@ -303,11 +311,14 @@ Eigen::Matrix4d ParallelPlatform::getT(Eigen::VectorXd Tlist)
     double rx = Tlist(3)/1000000;double ry = Tlist(4)/1000000;double rz = Tlist(5)/1000000;
     double H = 0;// 机器人高度
     // STEP2 计算平移部分
-    Eigen::Matrix4d T;
-    T<<1,0,0,x,
-        0,1,0,y,
-        0,0,1,z + H,
-        0,0,0,1;
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    Eigen::Vector3d values(x, y, z + H);
+    T.col(3).head(3) = values;
+    // Eigen::Matrix4d T;
+    // T<<1,0,0,x,
+    //     0,1,0,y,
+    //     0,0,1,z + H,
+    //     0,0,0,1;
     // STEP3 计算旋转部分
     Eigen::Matrix4d Rx = Eigen::Matrix4d::Identity();
     rx = rx * M_PI/180;
@@ -379,8 +390,13 @@ bool  ParallelPlatform::moveVelocity(Eigen::VectorXd VelocityList_b, double dt)
 
     double k = M_PI/(180*1000000);
     Eigen::VectorXd VelocityList_temp(6);
-    VelocityList_temp << VelocityList_b(3) * k, VelocityList_b(4) * k, VelocityList_b(5) * k,
-                                        VelocityList_b(0), VelocityList_b(1), VelocityList_b(2);
+    VelocityList_temp(0) = VelocityList_b(3) * k;
+    VelocityList_temp(1) = VelocityList_b(4) * k;
+    VelocityList_temp(2) = VelocityList_b(5) * k;
+    VelocityList_temp(3) = VelocityList_b(0);
+    VelocityList_temp(4) = VelocityList_b(1);
+    VelocityList_temp(5) = VelocityList_b(2);
+
     Eigen::VectorXd VelocityList_e = Eigen::VectorXd::Zero(6);
     this->b_T_e_ = currentPose_Mat_;
     VelocityList_e = Adjoint(this->b_T_e_.inverse()) * VelocityList_temp;

@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_visualServoingController->moveToThread(thread_visual_servoing);
     thread_visual_servoing->start();
 
-    qDebug() << "Current thread ID:" << QThread::currentThreadId();
+    qDebug() << "MainWindow thread ID:" << QThread::currentThreadId();
 
     // 初始化UI
     this->initUI();
@@ -74,15 +74,15 @@ void MainWindow::updateSystemStatus(const QString &status)
     ui->label_SystemStatus->setText(status);
 }
 
- void MainWindow::updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity)
+ void MainWindow::updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose)
 {
-          // position
-         ui->current_pos_x->setText(QString::number(current_positions(0)));
-         ui->current_pos_y->setText(QString::number(current_positions(1)));
-         ui->current_pos_z->setText(QString::number(current_positions(2)));
-         ui->current_pos_rx->setText(QString::number(current_positions(3)));
-         ui->current_pos_ry->setText(QString::number(current_positions(4)));
-         ui->current_pos_rz->setText(QString::number(current_positions(5)));
+          // Pose
+         ui->current_pos_x->setText(QString::number(current_pose(0)));
+         ui->current_pos_y->setText(QString::number(current_pose(1)));
+         ui->current_pos_z->setText(QString::number(current_pose(2)));
+         ui->current_pos_rx->setText(QString::number(current_pose(3)));
+         ui->current_pos_ry->setText(QString::number(current_pose(4)));
+         ui->current_pos_rz->setText(QString::number(current_pose(5)));
          // Velocity
          ui->current_vec_x->setText(QString::number(target_velocity(0)));
          ui->current_vec_y->setText(QString::number(target_velocity(1)));
@@ -90,6 +90,14 @@ void MainWindow::updateSystemStatus(const QString &status)
          ui->current_vec_rx->setText(QString::number(target_velocity(3)));
          ui->current_vec_ry->setText(QString::number(target_velocity(4)));
          ui->current_vec_rz->setText(QString::number(target_velocity(5)));
+         // Position
+         ui->current_joint_pos_1->setText(QString::number(current_positions(0)));
+         ui->current_joint_pos_2->setText(QString::number(current_positions(1)));
+         ui->current_joint_pos_3->setText(QString::number(current_positions(2)));
+         ui->current_joint_pos_4->setText(QString::number(current_positions(3)));
+         ui->current_joint_pos_5->setText(QString::number(current_positions(4)));
+         ui->current_joint_pos_6->setText(QString::number(current_positions(5)));
+
 }
 
 void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
@@ -119,6 +127,12 @@ void MainWindow::onSystemStart()
 {
     if(m_systemRunning) return;
 
+    // 启动图像采集
+    on_pushButton_Connect_clicked(true);
+    on_pushButton_StartCamera_clicked(true);
+
+    // 启动机器状态更新
+    this->m_visualServoingController->m_robot->startupdate();
     // 启动视觉伺服
     m_visualServoingController->startServoing();
     m_systemRunning = true;
@@ -127,13 +141,24 @@ void MainWindow::onSystemStart()
     // 更新UI状态
     ui->pushButton_Start->setEnabled(false);
     ui->pushButton_Stop->setEnabled(true);
-
+    ui->StartUpdate->setEnabled(false);
+    ui->StopUpdate->setEnabled(false);
+    ui->connect->setEnabled(false);
+    ui->disconnect->setEnabled(false);
+    ui->pushButton_Connect->setEnabled(false);
+    ui->pushButton_StartCamera->setEnabled(false);
     statusBar()->showMessage("系统已启动", 3000);
 }
 
 void MainWindow::onSystemStop()
 {
     if(!m_systemRunning) return;
+
+    // 启动图像采集
+    on_pushButton_StartCamera_clicked(false);
+    on_pushButton_Connect_clicked(false);
+    // 启动机器状态更新
+    this->m_visualServoingController->m_robot->stopupdate();
 
     // 停止视觉伺服
     m_visualServoingController->stopServoing();
@@ -143,19 +168,25 @@ void MainWindow::onSystemStop()
     // 更新UI状态
     ui->pushButton_Start->setEnabled(true);
     ui->pushButton_Stop->setEnabled(false);
-
+    ui->StartUpdate->setEnabled(true);
+    ui->StopUpdate->setEnabled(true);
+    ui->connect->setEnabled(true);
+    ui->disconnect->setEnabled(true);
+    ui->pushButton_Connect->setEnabled(true);
+    ui->pushButton_StartCamera->setEnabled(true);
     statusBar()->showMessage("系统已停止", 3000);
 }
 
 
-void MainWindow::on_pushButton_Start_clicked(bool checked)
+void MainWindow::on_pushButton_StartCamera_clicked(bool checked)
 {
     if(checked) {// 开始采集
         this->m_visualServoingController->m_camera->StartAcquire();
-        ui->pushButton_Start->setText("结束采集");// 结束采集
+        ui->pushButton_StartCamera->setText("StopCamera");// 结束采集
+        qDebug() << "开始采集";
     } else {
         this->m_visualServoingController->m_camera->StopAcquire();
-        ui->pushButton_Start->setText("开始采集");// 开始采集
+        ui->pushButton_StartCamera->setText("StartCamera");// 开始采集
     }
 }
 
@@ -179,12 +210,12 @@ void MainWindow::on_pushButton_Connect_clicked(bool checked)
             qWarning() << "未检测到任何相机！";
             ui->label_pic->setText("未检测到相机，请连接设备！");
         }
-        ui->pushButton_Connect->setText("断开连接");// 断开连接
+        ui->pushButton_Connect->setText("Disconnect");// 断开连接
     }
     else{
-        this->m_visualServoingController->m_camera->deleteAll();
+        this->m_visualServoingController->m_camera->closeCamera();
         ui->label_pic->setText("相机已断开！");
-        ui->pushButton_Connect->setText("连接相机");// 连接相机
+        ui->pushButton_Connect->setText("ConnectCamera");// 连接相机
     }
 }
 
@@ -456,7 +487,13 @@ void MainWindow::on_Wz_n_clicked()
 
 void MainWindow::on_Robot_Control_tabBarClicked(int index)
 {
-    this->m_visualServoingController->m_robot->controlMode_ = index;
+    if(index == 0){
+        this->m_visualServoingController->m_robot->controlMode_ = 0;//Velocity
+    }
+    else if(index == 1){
+        this->m_visualServoingController->m_robot->controlMode_ = 1;//Position
+    }
+
     // qDebug() << "controlMode_:\n" << this->m_visualServoingController->m_robot->controlMode_;
 }
 
@@ -633,9 +670,7 @@ void MainWindow::on_Rz_n_clicked()
 
 void MainWindow::on_MoveToZero_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
-    this->m_visualServoingController->m_robot->setTargetVelocity(Eigen::VectorXd::Zero(6));
-    this->m_visualServoingController->m_robot->setTargetPose(Eigen::VectorXd::Zero(6));
+    this->m_visualServoingController->m_robot->controlMode_ = 3;
 }
 
 
@@ -648,6 +683,12 @@ void MainWindow::on_StartUpdate_clicked()
 void MainWindow::on_StopUpdate_clicked()
 {
     this->m_visualServoingController->m_robot->stopupdate();
+}
+
+
+void MainWindow::on_MoveToZero_2_clicked()
+{
+    this->m_visualServoingController->m_robot->controlMode_ = 3;
 }
 
 

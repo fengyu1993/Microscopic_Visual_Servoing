@@ -23,7 +23,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_Start_clicked(bool checked);
+    void on_pushButton_StartCamera_clicked(bool checked);
 
     void on_pushButton_Connect_clicked(bool checked);
 
@@ -101,12 +101,13 @@ private slots:
 
     void on_Rz_n_clicked();
 
-
     void on_MoveToZero_clicked();
 
     void on_StartUpdate_clicked();
 
     void on_StopUpdate_clicked();
+
+    void on_MoveToZero_2_clicked();
 
 
 private:
@@ -124,7 +125,7 @@ private:
     void initUI();
     void setupConnections();
     void updateSystemStatus(const QString &status);
-    void updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity);
+    void updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose);
     void updateVSVisualizationData(const QVariantMap& visData);
     void initializeSystem();
     void onSystemStart();

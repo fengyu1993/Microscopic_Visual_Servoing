@@ -47,6 +47,7 @@ void BaslerCameraControl::run()
     // cv::namedWindow("window", cv::WINDOW_AUTOSIZE);
 
     while(true){
+        // qDebug() << "Camera thread ID:" << QThread::currentThreadId();
         if(m_isOpenAcquire && m_isOpen) {
             QMutexLocker locker(&m_frameMutex);
             GrabImage(this->img_Q);

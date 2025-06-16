@@ -32,6 +32,8 @@ struct VS_Parameter {
     Mat pose_desired;
     Mat Tbc;
     int max_iteration;
+
+    bool is_initialized = false;
 };
 
 class VisualServoingController: public QObject
@@ -46,6 +48,7 @@ public:
     void startServoing();
     void stopServoing();
     bool read_vs_parameter(QString location);
+    void output_vs_parameter();
 
 signals:
     void systemStatusChanged(const QString& status);
@@ -60,6 +63,7 @@ private:
     QTimer* m_controlTimer;
     bool m_isRunning;
     VS_Parameter vs_parameter;
+    QElapsedTimer cycleTimer;
 
     void executeControlCycle();
 };

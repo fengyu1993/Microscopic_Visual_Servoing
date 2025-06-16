@@ -18,7 +18,7 @@ class ParallelPlatform:  public QObject
     Q_OBJECT // 必须包含这个宏
 
 public:
-    ParallelPlatform(double dt);
+    ParallelPlatform(double hz);
     ~ParallelPlatform();
 
 public:
@@ -57,14 +57,14 @@ public:
     bool setTargetPose(Eigen::VectorXd P);
 
 signals:
-        void sig_updateRobotData(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity);
+        void sig_updateRobotData(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose);
 
 private:
     void controller();
     void update();  // 上传x，y，z，rx，ry，rz的位置
 
 public:
-    int controlMode_; // 0: velocity; 1: position; 2: stop
+    int controlMode_; // 0: velocity; 1: position; 2: stop; 3: moveToZero
     /// 辅助计算类函数
 
 private:
@@ -87,6 +87,7 @@ private:
     double epsilon_v_;
     double dt_;
     QTimer *m_preciseTimer_;
+    QElapsedTimer cycleTimer;
 
 /// 任务步骤
     // STEP1 读取位姿函数完成并且调试完毕  ok！

@@ -2,19 +2,24 @@
 
 VisualServoingController::VisualServoingController()
 {
-    read_vs_parameter("E:/QT/Microscopic_Visual_Servoing/resources/data/VS_Parameter.csv");
+    if(read_vs_parameter("E:/QT/Microscopic_Visual_Servoing/resources/data/VS_Parameter.csv")){
+        output_vs_parameter();
+    }
+    else{
+        emit servoingError("Read VS parameters failed");
+    }
 
     this->m_camera = new BaslerCameraControl();
 
-    this->m_robot = new  ParallelPlatform(1.0 / vs_parameter.control_rate);
+    this->m_robot = new  ParallelPlatform(50);
     QThread* thread_m_robot = new QThread();
     m_robot->moveToThread(thread_m_robot);
     thread_m_robot->start();
 
-    m_algorithm_DMVS = new Direct_Microscopic_Visual_Servoing();
+    m_algorithm_DMVS = new Direct_Microscopic_Visual_Servoing(vs_parameter.resolution_x, vs_parameter.resolution_y);
 
     m_controlTimer = new QTimer();
-    m_controlTimer->setInterval(100);
+    m_controlTimer->setInterval(1.0 / vs_parameter.control_rate *1000);
     m_controlTimer->setTimerType(Qt::PreciseTimer);
 
     m_isRunning = false;
@@ -36,8 +41,7 @@ VisualServoingController::~VisualServoingController()
 
 void VisualServoingController::executeControlCycle()
 {
-    static QElapsedTimer cycleTimer;
-    cycleTimer.start();
+    // qDebug() << "executeControlCycle thread ID:" << QThread::currentThreadId();
 
     try {
         // 获取执行器位姿
@@ -47,22 +51,29 @@ void VisualServoingController::executeControlCycle()
         m_algorithm_DMVS->image_gray_current_ = *framePtr;
         // 计算控制输出
         Mat velocity = m_algorithm_DMVS->get_object_velocity();
-        // 存储数据
-        m_algorithm_DMVS->save_all_data(T);
-        // 判断是否成功
-        if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
-        {
-            m_algorithm_DMVS->write_data();
-            velocity = 0 * velocity;
-            emit systemStatusChanged("Visual servoing success");
-        }
-        // 执行机器人运动
-        Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
-        if(!m_robot-> setTargetVelocity(velocity_eigen)) {
-            emit servoingError("Robot movement failed");
-            return;
-        }
-        // 更新视觉伺服数据
+        std::stringstream ss1;
+        ss1 << velocity;
+        qDebug() << "velocity:\n" << ss1.str().c_str();
+        // // 存储数据
+        // m_algorithm_DMVS->save_all_data(T);
+        // // 判断是否成功
+        // if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
+        // {
+        //     m_algorithm_DMVS->write_data();
+        //     velocity = 0 * velocity;
+        //     emit systemStatusChanged("Visual servoing success");
+        // }
+        // // 执行机器人运动
+        // Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
+        // std::stringstream ss1;
+        // ss1 << velocity_eigen;
+        // qDebug() << "velocity:\n" << ss1.str().c_str();
+
+        // // if(!m_robot-> setTargetVelocity(velocity_eigen)) {
+        // //     emit servoingError("Robot movement failed");
+        // //     return;
+        // // }
+        // // 更新视觉伺服数据
         QVariantMap visData;
         visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
         visData["feature_error"] = m_algorithm_DMVS->cost_function_value_;
@@ -111,7 +122,8 @@ void VisualServoingController::startServoing()
     // 启动控制定时器
     m_controlTimer->start();
     m_isRunning = true;
-
+    // 开始计时
+    cycleTimer.restart();
     emit systemStatusChanged("Servoing started");
 }
 
@@ -125,45 +137,40 @@ void VisualServoingController::stopServoing()
     m_camera->StopAcquire();
     // 停止机器人运动
     m_robot->stop();
-
     emit systemStatusChanged("Servoing stopped");
+}
+
+void VisualServoingController::output_vs_parameter()
+{
+
+    qDebug() << "resolution_x: " << vs_parameter.resolution_x;
+    qDebug() << "resolution_y: " << vs_parameter.resolution_y;
+    qDebug() << "lambda: " << vs_parameter.lambda;
+    qDebug() << "epsilon: " << vs_parameter.epsilon;
+    qDebug() << "control_rate: " << vs_parameter.control_rate;
+    qDebug() << "camera_parameters: \n" << "D_f_k_uv: "<< vs_parameter.camera_parameters.D_f_k_uv << "\n"
+             << "R_f: "<< vs_parameter.camera_parameters.R_f << "\n"
+             << "Z_f: "<< vs_parameter.camera_parameters.Z_f << "\n"
+             << "c_u: "<< vs_parameter.camera_parameters.c_u << "\n"
+             << "c_v: "<< vs_parameter.camera_parameters.c_v;
+    qDebug() << "resource_location: " << vs_parameter.resource_location;
+    qDebug() << "image_desired_name: " << vs_parameter.image_desired_name;
+    qDebug() << "max_iteration: " << vs_parameter.max_iteration;
+    std::stringstream ss1;
+    ss1 << vs_parameter.Tbc;
+    qDebug() << "Tbc:\n" << ss1.str().c_str();
+    std::stringstream ss2;
+    ss2 << vs_parameter.pose_desired;
+    qDebug() << "pose_desired:\n" << ss2.str().c_str();
 }
 
 bool VisualServoingController::read_vs_parameter(QString location) {
     // 定义默认的 camera_intrinsic 参数，使用表格中的数值
-    camera_intrinsic default_camera_params = {
-        0.3, // c_u
-        0.4, // c_v
-        2.0, // Z_f
-        6.2, // D_f_k_uv
-        1.0  // R_f
-    };
-
-    // 临时变量，用于存储从文件读取的信息，使用表格中的数值作为默认值
-    VS_Parameter temp_param = {
-        1600,  // resolution_x 默认值
-        1200,  // resolution_y 默认值
-        0.03,  // lambda 默认值
-        0.001, // epsilon 默认值
-        10.0,  // control_rate 默认值
-        default_camera_params,
-        "E:/QT/Microscopic_Visual_Servoing/resources/data", // resource_location 默认值
-        "image_desired.png", // image_desired_name 默认值
-        (cv::Mat_<double>(4,4) << 1, 0, 0, 122,
-         0, 1, 0, 40,
-         0, 0, 1, 30,
-         0, 0, 0, 1),
-        // Tbc 默认值 (4x4 单位矩阵，使用 CSV 中的数值)
-        (cv::Mat_<double>(4,4) << 0, 0, 1, 0.2,
-         0, -1, 0, 20,
-         1, 0, 0, 20,
-         0, 0, 0, 1)
-    };
 
     QFile file(location);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qWarning() << "Error: Could not open file:" << location << file.errorString();
-        vs_parameter = temp_param;
+        emit servoingError("Read VS parameters failed");
         return false;
     }
 
@@ -211,52 +218,52 @@ bool VisualServoingController::read_vs_parameter(QString location) {
 
                 if (paramName == "resolution_x") {
                     if (parts.size() >= 2) {
-                        temp_param.resolution_x = parts.at(1).trimmed().toInt(&ok);
+                        vs_parameter.resolution_x = parts.at(1).trimmed().toInt(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert resolution_x to int for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid resolution_x format for line:" << line << ". Using default."; }
                 } else if (paramName == "resolution_y") {
                     if (parts.size() >= 2) {
-                        temp_param.resolution_y = parts.at(1).trimmed().toInt(&ok);
+                        vs_parameter.resolution_y = parts.at(1).trimmed().toInt(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert resolution_y to int for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid resolution_y format for line:" << line << ". Using default."; }
                 } else if (paramName == "lambda") {
                     if (parts.size() >= 2) {
-                        temp_param.lambda = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.lambda = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert lambda to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid lambda format for line:" << line << ". Using default."; }
                 } else if (paramName == "epsilon") {
                     if (parts.size() >= 2) {
-                        temp_param.epsilon = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.epsilon = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert epsilon to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid epsilon format for line:" << line << ". Using default."; }
                 } else if (paramName == "control_rate") {
                     if (parts.size() >= 2) {
-                        temp_param.control_rate = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.control_rate = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert control_rate to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid control_rate format for line:" << line << ". Using default."; }
                 } else if (paramName == "c_u") { // Handle individual camera params
                     if (parts.size() >= 2) {
-                        temp_param.camera_parameters.c_u = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.camera_parameters.c_u = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert c_u to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid c_u format for line:" << line << ". Using default."; }
                 } else if (paramName == "c_v") {
                     if (parts.size() >= 2) {
-                        temp_param.camera_parameters.c_v = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.camera_parameters.c_v = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert c_v to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid c_v format for line:" << line << ". Using default."; }
                 } else if (paramName == "Z_f") {
                     if (parts.size() >= 2) {
-                        temp_param.camera_parameters.Z_f = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.camera_parameters.Z_f = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert Z_f to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid Z_f format for line:" << line << ". Using default."; }
                 } else if (paramName == "D_f_k_uv") { // Updated to match exact CSV name
                     if (parts.size() >= 2) {
-                        temp_param.camera_parameters.D_f_k_uv = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.camera_parameters.D_f_k_uv = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert D_f_k_uv to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid D_f_k_uv format for line:" << line << ". Using default."; }
                 } else if (paramName == "R_f") {
                     if (parts.size() >= 2) {
-                        temp_param.camera_parameters.R_f = parts.at(1).trimmed().toDouble(&ok);
+                        vs_parameter.camera_parameters.R_f = parts.at(1).trimmed().toDouble(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert R_f to double for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid R_f format for line:" << line << ". Using default."; }
                 } else if (paramName == "resource_location") { // Matched exact key from latest CSV
@@ -266,7 +273,7 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                             value = value.mid(1, value.length() - 2);
                         }
                         value = value.replace("\"\"", "\"");
-                        temp_param.resource_location = value;
+                        vs_parameter.resource_location = value;
                     } else { qWarning() << "Warning: Invalid resource_location format for line:" << line << ". Using default."; }
                 } else if (paramName == "image_rgb_desired_name") { // Matched exact key from latest CSV
                     if (parts.size() >= 2) {
@@ -275,7 +282,7 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                             value = value.mid(1, value.length() - 2);
                         }
                         value = value.replace("\"\"", "\"");
-                        temp_param.image_desired_name = value;
+                        vs_parameter.image_desired_name = value;
                     } else { qWarning() << "Warning: Invalid image_rgb_desired_name format for line:" << line << ". Using default."; }
                 } else if (paramName == "pose_desired") {
                     // Start reading matrix, initialize currentMatrix
@@ -292,7 +299,6 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                         }
 
                         if (matrixRowParts.size() == 4) { // Expect 4 elements for the first row
-                            bool row_parse_ok = true;
                             for (int j = 0; j < 4; ++j) {
                                 QString elementStr = matrixRowParts.at(j).trimmed();
                                 double element = 0.0;
@@ -309,7 +315,7 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                         } else {
                             qWarning() << "Warning: Invalid pose_desired first row format. Expected 4 elements on the key line for line:" << line << ". Using default matrix.";
                             currentState = ReadingGeneral; // Reset state
-                            temp_param.pose_desired = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                            vs_parameter.pose_desired = cv::Mat::eye(4,4,CV_64F); // Reset to default
                             overall_success = false;
                         }
                     } // If parts.size() == 1, then it's just the key, and matrix data starts next line (handled by subsequent state)
@@ -328,7 +334,6 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                         }
 
                         if (matrixRowParts.size() == 4) { // Expect 4 elements for the first row
-                            bool row_parse_ok = true;
                             for (int j = 0; j < 4; ++j) {
                                 QString elementStr = matrixRowParts.at(j).trimmed();
                                 double element = 0.0;
@@ -345,14 +350,14 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                         } else {
                             qWarning() << "Warning: Invalid Tbc first row format. Expected 4 elements on the key line for line:" << line << ". Using default matrix.";
                             currentState = ReadingGeneral; // Reset state
-                            temp_param.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                            vs_parameter.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
                             overall_success = false;
                         }
                     } // If parts.size() == 1, then it's just the key, and matrix data starts next line (handled by subsequent state)
                 }
                 else if (paramName == "max_iteration") {
                     if (parts.size() >= 2) {
-                        temp_param.max_iteration = parts.at(1).trimmed().toInt(&ok);
+                        vs_parameter.max_iteration = parts.at(1).trimmed().toInt(&ok);
                         if (!ok) { qWarning() << "Warning: Failed to convert resolution_x to int for line:" << line << ". Using default."; }
                     } else { qWarning() << "Warning: Invalid resolution_x format for line:" << line << ". Using default."; }
                 }else {
@@ -368,8 +373,8 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                 if (parts.size() != 4) {
                     qWarning() << "Warning: Invalid matrix row format. Expected 4 elements for line:" << line << " after comma handling. Matrix parsing aborted. Using default.";
                     currentState = ReadingGeneral; // Reset state
-                    if (currentState == ReadingPoseDesired) temp_param.pose_desired = cv::Mat::eye(4,4,CV_64F); // Reset to default
-                    else if (currentState == ReadingTbc) temp_param.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                    if (currentState == ReadingPoseDesired) vs_parameter.pose_desired = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                    else if (currentState == ReadingTbc) vs_parameter.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
                     overall_success = false; // Indicate a problem during parsing
                     continue; // Skip current malformed line
                 }
@@ -391,10 +396,10 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                 matrixRowsRead++;
                 if (matrixRowsRead == 4) { // Finished reading all 4 rows
                     if (currentState == ReadingPoseDesired) {
-                        temp_param.pose_desired = currentMatrix.clone(); // Assign the parsed matrix
+                        vs_parameter.pose_desired = currentMatrix.clone(); // Assign the parsed matrix
                         qDebug() << "Successfully parsed pose_desired matrix.";
                     } else if (currentState == ReadingTbc) {
-                        temp_param.Tbc = currentMatrix.clone(); // Assign the parsed matrix
+                        vs_parameter.Tbc = currentMatrix.clone(); // Assign the parsed matrix
                         qDebug() << "Successfully parsed Tbc matrix.";
                     }
                     currentState = ReadingGeneral; // Reset state
@@ -412,9 +417,7 @@ bool VisualServoingController::read_vs_parameter(QString location) {
     file.close();
 
     if (overall_success) {
-        vs_parameter = temp_param;
-    } else {
-        vs_parameter = temp_param; // 即使有警告，也保留部分解析的数据和默认值。
+        vs_parameter.is_initialized = true;
     }
 
     return overall_success;

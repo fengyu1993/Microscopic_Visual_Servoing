@@ -412,11 +412,22 @@
         </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="Stop_2">
-         <property name="text">
-          <string>Stop</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_18">
+         <item>
+          <widget class="QPushButton" name="MoveToZero_2">
+           <property name="text">
+            <string>MoveToZero</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="Stop_2">
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -428,7 +439,7 @@
       <x>510</x>
       <y>140</y>
       <width>451</width>
-      <height>90</height>
+      <height>103</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -437,7 +448,7 @@
        <item>
         <widget class="QPushButton" name="connect">
          <property name="text">
-          <string>Connect</string>
+          <string>Connect Robot</string>
          </property>
         </widget>
        </item>
@@ -457,7 +468,7 @@
        <item>
         <widget class="QPushButton" name="disconnect">
          <property name="text">
-          <string>Disconnect</string>
+          <string>Disconnect Robot</string>
          </property>
         </widget>
        </item>
@@ -517,6 +528,28 @@
        </item>
       </layout>
      </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_17">
+       <item>
+        <widget class="QLineEdit" name="current_joint_pos_1"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="current_joint_pos_2"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="current_joint_pos_3"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="current_joint_pos_4"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="current_joint_pos_5"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="current_joint_pos_6"/>
+       </item>
+      </layout>
+     </item>
     </layout>
    </widget>
    <widget class="QWidget" name="verticalLayoutWidget_9">
@@ -542,9 +575,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Start">
+        <widget class="QPushButton" name="pushButton_StartCamera">
          <property name="text">
-          <string>Start</string>
+          <string>StartCamera</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -664,7 +697,7 @@
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_11">
      <item>
-      <widget class="QPushButton" name="pushButton_c">
+      <widget class="QPushButton" name="pushButton_Start">
        <property name="text">
         <string>Start</string>
        </property>
