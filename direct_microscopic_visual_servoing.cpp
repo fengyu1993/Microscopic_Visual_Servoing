@@ -45,8 +45,15 @@ Direct_Microscopic_Visual_Servoing::Direct_Microscopic_Visual_Servoing(int resol
 // 计算直接显微视觉伺服特征误差 交互矩阵
 void Direct_Microscopic_Visual_Servoing::get_feature_error_interaction_matrix()
 {
+    // cout << "image_gray_current: rows " << this->image_gray_current_.rows << ", cols " << this->image_gray_current_.cols << ", chas" << this->image_gray_current_.channels() << endl;
+    // cout << "image_gray_desired: rows " << this->image_gray_desired_.rows << ", cols " << this->image_gray_desired_.cols << ", chas" << this->image_gray_desired_.channels() << endl;
+    // cout << "error_s_: rows " << this->error_s_.rows << ", cols " << this->error_s_.cols << endl;
+
     this->error_s_ = this->image_gray_current_.reshape(0, this->image_gray_current_.rows*this->image_gray_current_.cols)
-                - this->image_gray_desired_.reshape(0, this->image_gray_desired_.rows*this->image_gray_desired_.cols);  
+                - this->image_gray_desired_.reshape(0, this->image_gray_desired_.rows*this->image_gray_desired_.cols);
+    // double error_norm = cv::norm(this->error_s_, cv::NORM_L2SQR);
+    // cout << "cost function: " << error_norm << endl;
+    // cout << "error(1:5): " << this->error_s_(cv::Range(0, 5), cv::Range(0, 1)).clone() << endl;
     get_interaction_matrix_gray();
 }
 
@@ -59,6 +66,7 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
     get_image_gradient_v(I_v, I_vv);  
     cv::add(I_uu, I_vv, Delta_I);
 
+    // cout << "this->A_: " << this->A_ << endl  << "this->B_: " << this->B_ << endl  << "this->C_: " << this->C_ << endl ;
     Mat Mat_div_Z = this->A_ * this->Mat_u_ + this->B_ * this->Mat_v_ + this->C_;
     Mat Mat_div_Zf_Z = 1 / this->camera_intrinsic_.Z_f - Mat_div_Z;
     Mat Mat_uIu_vIv = this->Mat_u_.mul(I_u) + this->Mat_v_.mul(I_v);
@@ -74,8 +82,7 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
     Mat L_Ic_wy = -this->camera_intrinsic_.D_f_k_uv * I_u
                     - Mat_uIu_vIv.mul(this->Mat_u_) / this->camera_intrinsic_.D_f_k_uv
                     - Mat_Phi_Delta_I.mul(this->Mat_u_).mul(Mat_div_Zf_Z);
-    Mat L_Ic_wz = this->Mat_v_ * I_u - this->Mat_u_ * I_v;
-
+    Mat L_Ic_wz = this->Mat_v_.mul(I_u) - this->Mat_u_.mul(I_v);
     int totalElements = static_cast<int>(this->image_gray_current_.total());
     cv::Mat L_e_col1 = this->L_e_.col(0);
     cv::Mat L_e_col2 = this->L_e_.col(1);
@@ -83,7 +90,6 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
     cv::Mat L_e_col4 = this->L_e_.col(3);
     cv::Mat L_e_col5 = this->L_e_.col(4);
     cv::Mat L_e_col6 = this->L_e_.col(5);
-
     // // 使用 parallel_for_ 并行赋值
     cv::parallel_for_(cv::Range(0, totalElements), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; ++i) {
@@ -137,6 +143,13 @@ void Direct_Microscopic_Visual_Servoing::get_image_gradient_v(const Mat& image, 
     cv::subtract(image.row(1), image.row(0), I_v.row(0));
     cv::subtract(image.row(image.rows - 1), image.row(image.rows - 2), I_v.row(image.rows - 1));
     cv::divide(I_v, this->div_row_, I_v);
+}
+
+ void Direct_Microscopic_Visual_Servoing::updeta_planar_paramters(double A, double B, double C)
+{
+     this->A_ = A;
+     this->B_ = B;
+     this->C_ = C;
 }
 
 string Direct_Microscopic_Visual_Servoing::get_method_name()

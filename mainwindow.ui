@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1058</width>
-    <height>781</height>
+    <width>1113</width>
+    <height>826</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,7 +35,7 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>491</width>
+        <width>496</width>
         <height>155</height>
        </rect>
       </property>
@@ -243,7 +243,7 @@
        <rect>
         <x>30</x>
         <y>20</y>
-        <width>451</width>
+        <width>496</width>
         <height>131</height>
        </rect>
       </property>
@@ -439,7 +439,7 @@
       <x>510</x>
       <y>140</y>
       <width>451</width>
-      <height>103</height>
+      <height>118</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -448,7 +448,7 @@
        <item>
         <widget class="QPushButton" name="connect">
          <property name="text">
-          <string>Connect Robot</string>
+          <string>ConnectRobot</string>
          </property>
         </widget>
        </item>
@@ -468,7 +468,7 @@
        <item>
         <widget class="QPushButton" name="disconnect">
          <property name="text">
-          <string>Disconnect Robot</string>
+          <string>DisconnectRobot</string>
          </property>
         </widget>
        </item>
@@ -558,7 +558,7 @@
       <x>590</x>
       <y>40</y>
       <width>301</width>
-      <height>91</height>
+      <height>92</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -692,7 +692,7 @@
       <x>640</x>
       <y>10</y>
       <width>198</width>
-      <height>22</height>
+      <height>26</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -774,13 +774,41 @@
      </item>
     </layout>
    </widget>
+   <widget class="QChartView" name="charts_feature_error" native="true">
+    <property name="geometry">
+     <rect>
+      <x>500</x>
+      <y>540</y>
+      <width>601</width>
+      <height>211</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+     </font>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="SaveDesiredImage">
+    <property name="geometry">
+     <rect>
+      <x>500</x>
+      <y>10</y>
+      <width>131</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>SaveDesiredImage </string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1058</width>
+     <width>1113</width>
      <height>19</height>
     </rect>
    </property>
@@ -793,6 +821,14 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QChartView</class>
+   <extends>QWidget</extends>
+   <header>qchartview.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

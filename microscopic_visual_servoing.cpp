@@ -57,11 +57,11 @@ Mat Microscopic_Visual_Servoing::skewSymmetric(const Mat& v) {
 Mat Microscopic_Visual_Servoing::get_object_velocity()
 {
    this->iteration_num_++;
-    get_feature_error_interaction_matrix(); 
+    get_feature_error_interaction_matrix();
+    // cout << "L_e(1:5, 1:6): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
     Mat L_e_transpose = this->L_e_.t();
     Mat L_e_left_inverse = (L_e_transpose * this->L_e_).inv() * L_e_transpose;
-    // invert(this->L_e_, L_e_left_inverse, DECOMP_SVD);
-	Mat camera_velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
+    Mat camera_velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
     this->object_velocity_ = this->Ad_Tbc_ * camera_velocity;
     return this->object_velocity_;
 }
@@ -69,10 +69,9 @@ Mat Microscopic_Visual_Servoing::get_object_velocity()
 // 判断是否伺服成功
 bool Microscopic_Visual_Servoing::is_success()
 {
-	Mat cost_fun = this->error_s_.t() * this->error_s_;
-        this->cost_function_value_ = cost_fun.at<double>(0,0);
+    this->cost_function_value_ = cv::norm(this->error_s_, cv::NORM_L2SQR);
 
-	if(this->cost_function_value_ < this->epsilon_)
+    if(this->cost_function_value_ < this->epsilon_)
 	{
 		cout << "Visual Servoing Success" << endl;
 		return true;

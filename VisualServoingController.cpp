@@ -23,6 +23,7 @@ VisualServoingController::VisualServoingController()
     m_controlTimer->setTimerType(Qt::PreciseTimer);
 
     m_isRunning = false;
+    cnt = 0;
 
     connect(m_controlTimer, &QTimer::timeout, this, &VisualServoingController::executeControlCycle);
 }
@@ -41,44 +42,59 @@ VisualServoingController::~VisualServoingController()
 
 void VisualServoingController::executeControlCycle()
 {
+    qDebug() << "cnt: " << ++cnt;
     // qDebug() << "executeControlCycle thread ID:" << QThread::currentThreadId();
+    // cv::namedWindow("current", cv::WINDOW_AUTOSIZE);
+    // cv::namedWindow("desired", cv::WINDOW_AUTOSIZE);
 
     try {
         // 获取执行器位姿
         Mat T = m_robot->getTaskMat_cv();
+        // 更新平面参数
+        m_algorithm_DMVS->updeta_planar_paramters(0, 0, 1.0/vs_parameter.camera_parameters.Z_f);
         // 获取最新图像
-        std::shared_ptr<const cv::Mat> framePtr =  m_camera->getLatestFrameShared();
-        m_algorithm_DMVS->image_gray_current_ = *framePtr;
+        // std::shared_ptr<const cv::Mat> framePtr =  m_camera->getLatestFrameShared();
+        // m_algorithm_DMVS->image_gray_current_ = *framePtr;
+        m_algorithm_DMVS->image_gray_current_  = m_camera->getLatestFrame();
+
+        // if (cv::countNonZero(m_algorithm_DMVS->image_gray_current_ != I_) == 0) {
+        //     std::cout << "equal" << std::endl;
+        // } else {
+        //     std::cout << "non-equal" << std::endl;
+        // }
+        // cv::imshow("current", m_algorithm_DMVS->image_gray_current_);
+        // cv::imshow("desired", m_algorithm_DMVS->image_gray_desired_);
+        // cv::waitKey(1);
+
         // 计算控制输出
         Mat velocity = m_algorithm_DMVS->get_object_velocity();
         std::stringstream ss1;
         ss1 << velocity;
         qDebug() << "velocity:\n" << ss1.str().c_str();
-        // // 存储数据
-        // m_algorithm_DMVS->save_all_data(T);
-        // // 判断是否成功
-        // if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
-        // {
-        //     m_algorithm_DMVS->write_data();
-        //     velocity = 0 * velocity;
-        //     emit systemStatusChanged("Visual servoing success");
-        // }
+        // 存储数据
+        m_algorithm_DMVS->save_all_data(T);
+        // 判断是否成功
+        if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
+        {
+            m_algorithm_DMVS->write_data();
+            velocity = 0 * velocity;
+            emit systemStatusChanged("Visual servoing success");
+        }
         // // 执行机器人运动
-        // Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
-        // std::stringstream ss1;
-        // ss1 << velocity_eigen;
-        // qDebug() << "velocity:\n" << ss1.str().c_str();
+        Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
+        std::stringstream ss2;
+        ss2 << velocity_eigen;
+        qDebug() << "velocity:\n" << ss2.str().c_str();
 
         // // if(!m_robot-> setTargetVelocity(velocity_eigen)) {
         // //     emit servoingError("Robot movement failed");
         // //     return;
         // // }
-        // // 更新视觉伺服数据
+        // 更新视觉伺服数据
         QVariantMap visData;
         visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
         visData["feature_error"] = m_algorithm_DMVS->cost_function_value_;
         emit updateVisualServoingData(visData);
-
     } catch (const std::exception &e) {
         emit servoingError(QString("Control cycle error: %1").arg(e.what()));
         stopServoing();
@@ -113,8 +129,11 @@ void VisualServoingController::startServoing()
     m_camera->StartAcquire();
     QThread::msleep(50);
 
-    QString imagePath = vs_parameter.resource_location + vs_parameter.image_desired_name;
-    Mat image_desired = imread(imagePath.toStdString());
+    QString imagePath = vs_parameter.resource_location +"/" + vs_parameter.image_desired_name;
+    // qDebug() << "imagePath: " << imagePath;
+    Mat image_desired_gray = imread(imagePath.toStdString(), cv::IMREAD_GRAYSCALE);
+    Mat image_desired;
+    image_desired_gray.convertTo(image_desired, CV_64F, 1.0/255.0);
     Mat image_initial = m_camera->img_cv.clone();
     m_algorithm_DMVS->init_VS(vs_parameter.lambda, vs_parameter.epsilon, image_desired,
                               image_initial, vs_parameter.camera_parameters, vs_parameter.pose_desired, vs_parameter.Tbc);

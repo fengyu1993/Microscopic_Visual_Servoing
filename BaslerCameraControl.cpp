@@ -54,6 +54,7 @@ void BaslerCameraControl::run()
             if(!this->img_Q.isNull()) {
                 emit sigCurrentImage(this->img_Q);
                 qImageToCvMat(this->img_Q, this->img_cv);
+                this->img_cv.convertTo(this->img_vs, CV_64F, 1.0/255.0);
                 // cv::imshow("window", this->img_cv);
                 // cv::waitKey(1);
             }
@@ -474,6 +475,11 @@ long BaslerCameraControl::GrabImage(QImage &image, int timeout)
     return 0;
 }
 
+bool BaslerCameraControl::saveDesiredImage()
+{
+    return cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", this->img_cv);
+}
+
 //Qimage 与 cv mat转换
 void BaslerCameraControl::qImageToCvMat(const QImage& qImage, cv::Mat & image)
 {
@@ -572,9 +578,15 @@ QImage BaslerCameraControl::cvMatToQImage(const cv::Mat& mat)
     }
 }
 
+cv::Mat BaslerCameraControl::getLatestFrame()
+{
+    return this->img_vs.clone();
+}
+
+
 
 std::shared_ptr<const cv::Mat> BaslerCameraControl::getLatestFrameShared() const
 {
     QMutexLocker locker(&m_frameMutex);
-    return std::make_shared<cv::Mat>(img_cv);
+    return std::make_shared<cv::Mat>(img_vs);
 }

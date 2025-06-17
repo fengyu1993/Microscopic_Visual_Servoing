@@ -33,6 +33,8 @@ class Direct_Microscopic_Visual_Servoing: public Microscopic_Visual_Servoing
 
         void get_image_gradient_v(const Mat& image, Mat& I_y);
 
+        void updeta_planar_paramters(double A, double B, double C);
+
         virtual string get_method_name();
 };
 

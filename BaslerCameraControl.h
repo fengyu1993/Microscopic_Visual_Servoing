@@ -57,6 +57,7 @@ public:
     int getFrameRate();
     void autoExposureOnce();
 
+
     long GrabImage(QImage& image,int timeout = 2000);
 
     long StartAcquire(); // 开始采集
@@ -65,6 +66,8 @@ public:
     void qImageToCvMat(const QImage& qImage, cv::Mat & image);
     QImage cvMatToQImage(const cv::Mat& mat);
     std::shared_ptr<const cv::Mat> getLatestFrameShared() const;
+    cv::Mat getLatestFrame();
+    bool saveDesiredImage();
 
 signals:
     void sigCameraUpdate(QStringList list);
@@ -87,6 +90,7 @@ private:
 
 public:
     cv::Mat img_cv;
+    cv::Mat img_vs;
     QImage img_Q;
 };
 

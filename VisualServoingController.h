@@ -43,7 +43,6 @@ public:
     VisualServoingController();
     ~VisualServoingController();
 
-
     bool initializeSystem();
     void startServoing();
     void stopServoing();
@@ -64,6 +63,7 @@ private:
     bool m_isRunning;
     VS_Parameter vs_parameter;
     QElapsedTimer cycleTimer;
+    int cnt;
 
     void executeControlCycle();
 };

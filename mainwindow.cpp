@@ -10,12 +10,13 @@ MainWindow::MainWindow(QWidget *parent)
     m_systemPaused(false)
 {
     ui->setupUi(this);
+
     this->m_visualServoingController = new VisualServoingController();
     QThread* thread_visual_servoing = new QThread();
     m_visualServoingController->moveToThread(thread_visual_servoing);
     thread_visual_servoing->start();
 
-    qDebug() << "MainWindow thread ID:" << QThread::currentThreadId();
+    // qDebug() << "MainWindow thread ID:" << QThread::currentThreadId();
 
     // 初始化UI
     this->initUI();
@@ -53,6 +54,23 @@ void MainWindow::initUI()
 
     ui->pushButton_Start->setEnabled(true);
     ui->pushButton_Stop->setEnabled(false);
+    // 创建图表曲线系列
+    chart = new QChart();
+    chart->legend()->hide();
+    chart->setTitle("Feature error");
+
+    BlueSeries = new QLineSeries();
+    BlueSeries->setColor(Qt::blue);
+    RedSeries = new QLineSeries();
+    RedSeries->setColor(Qt::red);
+    GreenSeries = new QLineSeries();
+    GreenSeries->setColor(Qt::green);
+
+    chart->addSeries(BlueSeries);
+    chart->createDefaultAxes();
+    ui->charts_feature_error->setChart(chart);
+    ui->charts_feature_error->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+
 }
 
 void MainWindow::setupConnections()
@@ -67,6 +85,45 @@ void MainWindow::setupConnections()
     });
     connect(this->m_visualServoingController, &VisualServoingController::systemStatusChanged, this, &MainWindow::updateSystemStatus);
     connect(this->m_visualServoingController, &VisualServoingController::updateVisualServoingData, this, &MainWindow::updateVSVisualizationData);
+
+}
+
+void MainWindow::getdateSeries(QLineSeries *series, double t, double pos, qreal minY, qreal maxY)
+{
+    // 添加新的数据点
+    series->append(t, pos);
+
+    // 增量更新最小值和最大值
+    if (series->count() == 1) { // 初始化第一个点的情况
+        minY = pos;
+        maxY = pos;
+    } else {
+        minY = std::min(minY, pos);
+        maxY = std::max(maxY, pos);
+    }
+}
+
+void MainWindow::updateChart(QChartView *chartView, double t, qreal minY, qreal maxY)
+{
+    // 更新x轴范围
+    auto axesX = chartView->chart()->axes(Qt::Horizontal);
+    if (!axesX.isEmpty()) {
+        QValueAxis *axisX = qobject_cast<QValueAxis*>(axesX.first());
+        if (axisX) {
+            axisX->setRange(0, t); // 更新x轴范围以适应新数据
+        }
+    }
+
+    // 更新y轴范围
+    auto axesY = chartView->chart()->axes(Qt::Vertical);
+    if (!axesY.isEmpty()) {
+        QValueAxis *axisY = qobject_cast<QValueAxis*>(axesY.first());
+        if (axisY) {
+            const qreal margin = 5;
+            // 设置y轴范围
+            axisY->setRange(minY - margin, maxY + margin);
+        }
+    }
 }
 
 void MainWindow::updateSystemStatus(const QString &status)
@@ -108,6 +165,11 @@ void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
     if(visData.contains("feature_error")) {
         ui->FeatureErrorValue->setText(QString::number(visData.value("feature_error").toDouble()));
     }
+
+    double time = visData.value("loop_time").toDouble() / 1000.0;
+    // visData.value("feature_error").toDouble()
+    getdateSeries(BlueSeries, time, 200, qreal(0.0), qreal(1000.0));
+    updateChart(ui->charts_feature_error, time, qreal(0.0), qreal(1000.0));
 }
 
 void MainWindow::initializeSystem()
@@ -691,4 +753,15 @@ void MainWindow::on_MoveToZero_2_clicked()
     this->m_visualServoingController->m_robot->controlMode_ = 3;
 }
 
+
+
+void MainWindow::on_SaveDesiredImage_clicked()
+{
+    if(this->m_visualServoingController->m_camera->saveDesiredImage()){
+        qDebug() << "saveDesiredImage Successful";
+    }
+    else{
+        qDebug() << "saveDesiredImage fail";
+    }
+}
 

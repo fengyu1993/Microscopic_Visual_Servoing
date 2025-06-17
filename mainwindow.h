@@ -5,6 +5,7 @@
 #include <QTransform>
 #include <QMessageBox>
 #include <QVariantMap>
+#include <QtCharts>
 
 #include "VisualServoingController.h"
 
@@ -23,6 +24,16 @@ public:
     ~MainWindow();
 
 private slots:
+    void onSystemStart();
+
+    void onSystemStop();
+
+    void updateSystemStatus(const QString &status);
+
+    void updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose);
+
+    void updateVSVisualizationData(const QVariantMap& visData);
+
     void on_pushButton_StartCamera_clicked(bool checked);
 
     void on_pushButton_Connect_clicked(bool checked);
@@ -110,6 +121,8 @@ private slots:
     void on_MoveToZero_2_clicked();
 
 
+    void on_SaveDesiredImage_clicked();
+
 private:
     Ui::MainWindow *ui;
     VisualServoingController* m_visualServoingController = Q_NULLPTR;
@@ -121,14 +134,18 @@ private:
     // 状态变量
     bool m_systemRunning;
     bool m_systemPaused;
+    // 图像显示
+    QChart *chart;
+    QChartView *chartView;
+    double xValue = 0;
+    QLineSeries *BlueSeries;
+    QLineSeries *RedSeries;
+    QLineSeries *GreenSeries;
     // 函数
     void initUI();
     void setupConnections();
-    void updateSystemStatus(const QString &status);
-    void updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose);
-    void updateVSVisualizationData(const QVariantMap& visData);
     void initializeSystem();
-    void onSystemStart();
-    void onSystemStop();
+    void updateChart(QChartView *chartView, double t, qreal minY, qreal maxY);
+    void getdateSeries(QLineSeries *series, double t, double pos, qreal minY, qreal maxY);
 };
 #endif // MAINWINDOW_H
