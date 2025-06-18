@@ -3,7 +3,7 @@ resolution_y,1200,,,
 epsilon,0.001,,,
 lambda,0.03,,,
 control_rate,10,,,
-c_u,0.4,,,
+c_u,0.3,,,
 c_v,0.4,,,
 Z_f,2,,,
 R_f,1,,,
@@ -18,4 +18,4 @@ Tbc,0,0,1,0.2
 ,0,-1,0,20
 ,1,0,0,20
 ,0,0,0,1
-max_iteration,2000,,,
+max_iteration,3,,,

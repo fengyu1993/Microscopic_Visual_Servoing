@@ -53,8 +53,9 @@ void BaslerCameraControl::run()
             GrabImage(this->img_Q);
             if(!this->img_Q.isNull()) {
                 emit sigCurrentImage(this->img_Q);
-                qImageToCvMat(this->img_Q, this->img_cv);
-                this->img_cv.convertTo(this->img_vs, CV_64F, 1.0/255.0);
+                cv::Mat img;
+                qImageToCvMat(this->img_Q, img);
+                updateFrame(img);
                 // cv::imshow("window", this->img_cv);
                 // cv::waitKey(1);
             }
@@ -477,7 +478,11 @@ long BaslerCameraControl::GrabImage(QImage &image, int timeout)
 
 bool BaslerCameraControl::saveDesiredImage()
 {
-    return cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", this->img_cv);
+    cv::Mat img_64f = getLatestFrame();
+    cv::Mat img_8u;
+    img_64f.convertTo(img_8u, CV_8UC1, 255.0);
+    // 存储
+    return cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", img_8u);
 }
 
 //Qimage 与 cv mat转换
@@ -536,9 +541,9 @@ void BaslerCameraControl::qImageToCvMat(const QImage& qImage, cv::Mat & image)
     default:
         qWarning() << "Unsupported QImage format:" << qImage.format();
     }
+
+    image.convertTo(image, CV_64F, 1.0/255.0);
 }
-
-
 
 // cv::Mat转QImage实现
 QImage BaslerCameraControl::cvMatToQImage(const cv::Mat& mat)
@@ -578,15 +583,28 @@ QImage BaslerCameraControl::cvMatToQImage(const cv::Mat& mat)
     }
 }
 
-cv::Mat BaslerCameraControl::getLatestFrame()
-{
-    return this->img_vs.clone();
+// cv::Mat BaslerCameraControl::getLatestFrame()
+// {
+
+//     return this->img_vs.clone();
+// }
+
+// 获取帧
+cv::Mat BaslerCameraControl::getLatestFrame() {
+    return this->img_vs[m_readIndex.load()].clone();
 }
 
+// 更新帧（在采集线程中）
+void BaslerCameraControl::updateFrame(const cv::Mat& newFrame) {
+    int writeIndex = 1 - m_readIndex.load();
+    this->img_vs[writeIndex] = newFrame.clone();
+    m_readIndex.store(writeIndex);
+}
 
 
 std::shared_ptr<const cv::Mat> BaslerCameraControl::getLatestFrameShared() const
 {
     QMutexLocker locker(&m_frameMutex);
-    return std::make_shared<cv::Mat>(img_vs);
+
+    return std::make_shared<cv::Mat>(this->img_vs[m_readIndex.load()]);
 }

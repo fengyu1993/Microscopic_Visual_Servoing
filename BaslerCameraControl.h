@@ -68,6 +68,7 @@ public:
     std::shared_ptr<const cv::Mat> getLatestFrameShared() const;
     cv::Mat getLatestFrame();
     bool saveDesiredImage();
+    void updateFrame(const cv::Mat& newFrame);
 
 signals:
     void sigCameraUpdate(QStringList list);
@@ -89,10 +90,9 @@ private:
     mutable QMutex m_frameMutex;
 
 public:
-    cv::Mat img_cv;
-    cv::Mat img_vs;
     QImage img_Q;
+    cv::Mat img_vs[2];
+    std::atomic<int> m_readIndex{0};
 };
-
 
 #endif // BASLERCAMERACONTROL_H

@@ -35,6 +35,8 @@ class Direct_Microscopic_Visual_Servoing: public Microscopic_Visual_Servoing
 
         void updeta_planar_paramters(double A, double B, double C);
 
+        virtual void init_other_parameter();
+
         virtual string get_method_name();
 };
 

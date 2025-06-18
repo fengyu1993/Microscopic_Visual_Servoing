@@ -16,30 +16,6 @@ Direct_Microscopic_Visual_Servoing::Direct_Microscopic_Visual_Servoing(int resol
     this->div_row_ = Mat::ones(resolution_y, resolution_x, CV_64FC1) * 2;
     this->div_row_.row(0).setTo(cv::Scalar(1.0));
     this->div_row_.row(this->div_row_.rows-1).setTo(cv::Scalar(1.0));
-
-    this->Phi_ = (pow(this->camera_intrinsic_.R_f,2) * this->camera_intrinsic_.D_f_k_uv) / (9*this->camera_intrinsic_.Z_f);
-
-    Mat Mat_u = Mat::zeros(resolution_y, resolution_x, CV_64FC1);
-    cv::parallel_for_(cv::Range(0, Mat_u.rows), [&](const cv::Range& range) {
-        for (int r = range.start; r < range.end; ++r) {
-            double* rowPtr = Mat_u.ptr<double>(r);
-            for (int c = 0; c < Mat_u.cols; ++c) {
-                rowPtr[c] = c;
-            }
-        }
-    });
-    this->Mat_u_ = Mat_u - this->camera_intrinsic_.c_u;
-
-    Mat Mat_v = Mat::zeros(resolution_y, resolution_x, CV_64FC1);
-    cv::parallel_for_(cv::Range(0, Mat_v.rows), [&](const cv::Range& range) {
-        for (int r = range.start; r < range.end; ++r) {
-            double* rowPtr = Mat_v.ptr<double>(r);
-            for (int c = 0; c < Mat_v.cols; ++c) {
-                rowPtr[c] = r;  // 每个元素赋值为行号
-            }
-        }
-    });
-    this->Mat_v_ = Mat_v - this->camera_intrinsic_.c_v;
 }
 
 // 计算直接显微视觉伺服特征误差 交互矩阵
@@ -66,11 +42,21 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
     get_image_gradient_v(I_v, I_vv);  
     cv::add(I_uu, I_vv, Delta_I);
 
-    // cout << "this->A_: " << this->A_ << endl  << "this->B_: " << this->B_ << endl  << "this->C_: " << this->C_ << endl ;
+    // cout << "I_u(1:5, 1:6): \n" << I_u(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "I_v(1:5, 1:6): \n" << I_v(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "I_uu(1:5, 1:6): \n" << I_uu(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "I_vv(1:5, 1:6): \n" << I_vv(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+
     Mat Mat_div_Z = this->A_ * this->Mat_u_ + this->B_ * this->Mat_v_ + this->C_;
     Mat Mat_div_Zf_Z = 1 / this->camera_intrinsic_.Z_f - Mat_div_Z;
     Mat Mat_uIu_vIv = this->Mat_u_.mul(I_u) + this->Mat_v_.mul(I_v);
     Mat Mat_Phi_Delta_I = this->Phi_ * Delta_I;
+
+    // cout << "this->A_: " << this->A_ << endl  << "this->B_: " << this->B_ << endl  << "this->C_: " << this->C_ << endl ;
+    // cout << "Mat_div_Z(1:5, 1:6): \n" << Mat_div_Z(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Mat_div_Zf_Z(1:5, 1:6): \n" << Mat_div_Zf_Z(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Mat_uIu_vIv(1:5, 1:6): \n" << Mat_uIu_vIv(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Mat_Phi_Delta_I(1:5, 1:6): \n" << Mat_Phi_Delta_I(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
 
     Mat L_Ic_vx = -I_u.mul(Mat_div_Z) * this->camera_intrinsic_.D_f_k_uv;
     Mat L_Ic_vy = -I_v.mul(Mat_div_Z) * this->camera_intrinsic_.D_f_k_uv;
@@ -150,6 +136,41 @@ void Direct_Microscopic_Visual_Servoing::get_image_gradient_v(const Mat& image, 
      this->A_ = A;
      this->B_ = B;
      this->C_ = C;
+}
+
+void Direct_Microscopic_Visual_Servoing::init_other_parameter()
+{
+    this->Phi_ = (pow(this->camera_intrinsic_.R_f,2) * this->camera_intrinsic_.D_f_k_uv) / (9*this->camera_intrinsic_.Z_f);
+
+    cv::Mat Mat_u = cv::Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
+    cv::parallel_for_(cv::Range(0, Mat_u.rows), [&](const cv::Range& range) {
+        for (int r = range.start; r < range.end; ++r) {
+            double* rowPtr = Mat_u.ptr<double>(r);
+            for (int c = 0; c < Mat_u.cols; ++c) {
+                rowPtr[c] = c;
+            }
+        }
+    });
+    this->Mat_u_ = Mat_u - this->camera_intrinsic_.c_u;
+
+    Mat Mat_v = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
+    cv::parallel_for_(cv::Range(0, Mat_v.rows), [&](const cv::Range& range) {
+        for (int r = range.start; r < range.end; ++r) {
+            double* rowPtr = Mat_v.ptr<double>(r);
+            for (int c = 0; c < Mat_v.cols; ++c) {
+                rowPtr[c] = r;  // 每个元素赋值为行号
+            }
+        }
+    });
+    this->Mat_v_ = Mat_v - this->camera_intrinsic_.c_v;
+
+    // cout << "div_col_(1:5, 1:6): \n" << div_col_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "div_row_(1:5, 1:6): \n" << div_row_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Phi_ \n" << Phi_ << endl;
+    // cout << "Mat_u(1:5, 1:6): \n" << Mat_u(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Mat_v(1:5, 1:6): \n" << Mat_v(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Mat_u_(1:5, 1:6): \n" << Mat_u_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "Mat_v_(1:5, 1:6): \n" << Mat_v_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
 }
 
 string Direct_Microscopic_Visual_Servoing::get_method_name()

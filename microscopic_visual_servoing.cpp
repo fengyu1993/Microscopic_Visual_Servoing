@@ -19,7 +19,7 @@ Microscopic_Visual_Servoing::Microscopic_Visual_Servoing(int resolution_x, int r
 }
 
 // 初始化
-void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& image_gray_desired, Mat& image_gray_initial, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Tbc)
+void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& image_gray_desired, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Tbc)
 {
     this->lambda_ = lambda;
     this->epsilon_ = epsilon;
@@ -31,10 +31,10 @@ void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& im
     t_x_R.copyTo(this->Ad_Tbc_(cv::Rect(3, 0, 3, 3)));
 
     set_image_gray_desired(image_gray_desired);
-    set_image_gray_initial(image_gray_initial);
     set_pose_desired(pose_desired);
-    save_data_image();
     save_pose_desired();
+
+    init_other_parameter();
 }
 
 Mat Microscopic_Visual_Servoing::skewSymmetric(const Mat& v) {
@@ -59,6 +59,7 @@ Mat Microscopic_Visual_Servoing::get_object_velocity()
    this->iteration_num_++;
     get_feature_error_interaction_matrix();
     // cout << "L_e(1:5, 1:6): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
+    // cout << "error_s_(1:5): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 1)).clone() << endl;
     Mat L_e_transpose = this->L_e_.t();
     Mat L_e_left_inverse = (L_e_transpose * this->L_e_).inv() * L_e_transpose;
     Mat camera_velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
@@ -95,9 +96,10 @@ void Microscopic_Visual_Servoing::set_image_gray_current(Mat& image_gray_current
 }
 
 // 设置初始图像
-void Microscopic_Visual_Servoing::set_image_gray_initial(Mat& image_gray_initial)
+void Microscopic_Visual_Servoing::set_image_gray_initial(const Mat& image_gray_initial)
 {
     image_gray_initial.copyTo(this->image_gray_initial_);
+
 }
 
 // 保存期望位姿
@@ -170,6 +172,7 @@ void Microscopic_Visual_Servoing::save_data_vs_time()
 // 将数据保存在文件中
 void Microscopic_Visual_Servoing::write_data()
 {
+    save_data_image();
     string file_name = get_save_file_name();
     string location = "E:/QT/Microscopic_Visual_Servoing/resources/data/";
     // 保存图像

@@ -209,6 +209,8 @@ void MainWindow::onSystemStart()
     ui->disconnect->setEnabled(false);
     ui->pushButton_Connect->setEnabled(false);
     ui->pushButton_StartCamera->setEnabled(false);
+    ui->getState->setEnabled(false);
+    ui->FindReferance->setEnabled(false);
     statusBar()->showMessage("系统已启动", 3000);
 }
 
@@ -236,6 +238,8 @@ void MainWindow::onSystemStop()
     ui->disconnect->setEnabled(true);
     ui->pushButton_Connect->setEnabled(true);
     ui->pushButton_StartCamera->setEnabled(true);
+    ui->getState->setEnabled(true);
+    ui->FindReferance->setEnabled(true);
     statusBar()->showMessage("系统已停止", 3000);
 }
 

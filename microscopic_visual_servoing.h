@@ -50,7 +50,7 @@ class Microscopic_Visual_Servoing
     public: 
         Microscopic_Visual_Servoing(int resolution_x, int resolution_y);
 
-        void init_VS(double lambda, double epsilon, Mat& image_gray_desired, Mat& image_gray_initial, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Toc);
+        void init_VS(double lambda, double epsilon, Mat& image_gray_desired, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Toc);
 
         Mat skewSymmetric(const Mat& v);
 
@@ -64,7 +64,7 @@ class Microscopic_Visual_Servoing
 
         void set_image_gray_current(Mat& image_gray_current);
 
-        void set_image_gray_initial(Mat& image_gray_initial);
+        void set_image_gray_initial(const Mat& image_gray_initial);
 
         void set_pose_desired(Mat& pose_desired);
 
@@ -81,6 +81,8 @@ class Microscopic_Visual_Servoing
         void save_data_vs_time();
 
         virtual void save_data_other_parameter() {};
+
+        virtual void init_other_parameter() {};
 
         void save_all_data(Mat pose);
 
