@@ -621,32 +621,6 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="verticalLayoutWidget_10">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>30</y>
-      <width>481</width>
-      <height>531</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout_10">
-     <item>
-      <widget class="QLabel" name="label_pic">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_pic_desired">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QLabel" name="label_SystemStatus">
     <property name="geometry">
      <rect>
@@ -801,6 +775,32 @@
     <property name="text">
      <string>SaveDesiredImage </string>
     </property>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>321</width>
+      <height>481</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,1">
+     <item>
+      <widget class="QLabel" name="label_pic">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_pic_desired">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

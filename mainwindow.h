@@ -145,7 +145,7 @@ private:
     void initUI();
     void setupConnections();
     void initializeSystem();
-    void updateChart(QChartView *chartView, double t, qreal minY, qreal maxY);
-    void getdateSeries(QLineSeries *series, double t, double pos, qreal minY, qreal maxY);
+    void updateChart(QChartView *chartView, double t, double  minY, double  maxY);
+    void getdateSeries(QLineSeries *series, double t, double pos, double&  minY, double& maxY);
 };
 #endif // MAINWINDOW_H

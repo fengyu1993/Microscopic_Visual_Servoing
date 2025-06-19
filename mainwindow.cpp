@@ -88,22 +88,22 @@ void MainWindow::setupConnections()
 
 }
 
-void MainWindow::getdateSeries(QLineSeries *series, double t, double pos, qreal minY, qreal maxY)
+void MainWindow::getdateSeries(QLineSeries *series, double t, double pos, double&  minY, double&  maxY)
 {
     // 添加新的数据点
     series->append(t, pos);
 
     // 增量更新最小值和最大值
     if (series->count() == 1) { // 初始化第一个点的情况
-        minY = pos;
-        maxY = pos;
+        minY = pos*0.8;
+        maxY = pos*1.2;
     } else {
-        minY = std::min(minY, pos);
-        maxY = std::max(maxY, pos);
+        minY = std::min(minY, pos)*0.8;
+        maxY = std::max(maxY, pos)*1.2;
     }
 }
 
-void MainWindow::updateChart(QChartView *chartView, double t, qreal minY, qreal maxY)
+void MainWindow::updateChart(QChartView *chartView, double t, double minY, double  maxY)
 {
     // 更新x轴范围
     auto axesX = chartView->chart()->axes(Qt::Horizontal);
@@ -167,9 +167,10 @@ void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
     }
 
     double time = visData.value("loop_time").toDouble() / 1000.0;
-    // visData.value("feature_error").toDouble()
-    getdateSeries(BlueSeries, time, 200, qreal(0.0), qreal(1000.0));
-    updateChart(ui->charts_feature_error, time, qreal(0.0), qreal(1000.0));
+    double cost = visData.value("feature_error").toDouble();
+    double Y_min, Y_max;
+    getdateSeries(BlueSeries, time, cost, Y_min, Y_max);
+    updateChart(ui->charts_feature_error, time, Y_min, Y_max);
 }
 
 void MainWindow::initializeSystem()
