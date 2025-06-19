@@ -476,13 +476,14 @@ long BaslerCameraControl::GrabImage(QImage &image, int timeout)
     return 0;
 }
 
-bool BaslerCameraControl::saveDesiredImage()
+cv::Mat BaslerCameraControl::saveDesiredImage()
 {
     cv::Mat img_64f = getLatestFrame();
     cv::Mat img_8u;
     img_64f.convertTo(img_8u, CV_8UC1, 255.0);
     // 存储
-    return cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", img_8u);
+    cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", img_8u);
+    return img_64f;
 }
 
 //Qimage 与 cv mat转换
@@ -574,6 +575,13 @@ QImage BaslerCameraControl::cvMatToQImage(const cv::Mat& mat)
                           mat.rows,
                           static_cast<int>(mat.step),
                           QImage::Format_Grayscale8).copy();
+        case CV_64FC1: {
+            cv::Mat normalized;
+            // 归一化到 [0, 255] 并转换为 8UC1
+            cv::normalize(mat, normalized, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+            return  QImage(normalized.data, normalized.cols, normalized.rows,
+                         normalized.step, QImage::Format_Grayscale8).copy();
+        }
         default:
             qWarning() << "Unsupported cv::Mat type:" << mat.type();
             return QImage();

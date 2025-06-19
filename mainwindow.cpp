@@ -96,6 +96,8 @@ void MainWindow::initUI()
     ui->charts_angular_velocity->setRenderHint(QPainter::Antialiasing); // 抗锯齿
     angular_velocity_min = 0.0;
     angular_velocity_max = 0.0;
+    // 显示期望图像
+
 }
 
 void MainWindow::setupConnections()
@@ -110,7 +112,6 @@ void MainWindow::setupConnections()
     });
     connect(this->m_visualServoingController, &VisualServoingController::systemStatusChanged, this, &MainWindow::updateSystemStatus);
     connect(this->m_visualServoingController, &VisualServoingController::updateVisualServoingData, this, &MainWindow::updateVSVisualizationData);
-
 }
 
 void MainWindow::getdateSeries(QLineSeries *series, double t, double pos, double&  minY, double&  maxY)
@@ -212,12 +213,27 @@ void MainWindow::initializeSystem()
     // 初始化系统组件
     if(!m_visualServoingController->initializeSystem()) {
         QMessageBox::critical(this, "错误", "系统初始化失败!");
-        return;
+        return;}
+    else{
+        displayDesiredImage();
     }
     // 更新UI状态
     ui->label_CameraStatus->setText("Connected");
     ui->label_RobotStatus->setText("Connected");
     ui->label_SystemStatus->setText("Successfully initialized");
+ }
+
+ void MainWindow::displayDesiredImage()
+ {
+     QImage qImage = m_visualServoingController->m_camera->cvMatToQImage
+                     (m_visualServoingController->m_algorithm_DMVS->image_gray_desired_);
+     QPixmap pixmap = QPixmap::fromImage(qImage);
+    ui->label_pic_desired->setPixmap(pixmap.scaled(ui->label_pic_desired->size(), Qt::KeepAspectRatio));
+
+
+     // qDebug() << "label_pic_desired size: " << ui->label_pic_desired->size();
+     // qDebug() << "label_pic size: " << ui->label_pic->size();
+
  }
 
 void MainWindow::onSystemStart()
@@ -796,11 +812,8 @@ void MainWindow::on_MoveToZero_2_clicked()
 
 void MainWindow::on_SaveDesiredImage_clicked()
 {
-    if(this->m_visualServoingController->m_camera->saveDesiredImage()){
-        qDebug() << "saveDesiredImage Successful";
-    }
-    else{
-        qDebug() << "saveDesiredImage fail";
-    }
+    cv::Mat img_64f = this->m_visualServoingController->m_camera->saveDesiredImage();
+    this->m_visualServoingController->m_algorithm_DMVS->set_image_gray_desired(img_64f);
+    displayDesiredImage();
 }
 

@@ -67,7 +67,7 @@ public:
     QImage cvMatToQImage(const cv::Mat& mat);
     std::shared_ptr<const cv::Mat> getLatestFrameShared() const;
     cv::Mat getLatestFrame();
-    bool saveDesiredImage();
+    cv::Mat saveDesiredImage();
     void updateFrame(const cv::Mat& newFrame);
 
 signals:

@@ -152,5 +152,6 @@ private:
     void initializeSystem();
     void updateChart(QChartView *chartView, double t, double  minY, double  maxY);
     void getdateSeries(QLineSeries *series, double t, double pos, double&  minY, double& maxY);
+    void displayDesiredImage();
 };
 #endif // MAINWINDOW_H
