@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1113</width>
-    <height>826</height>
+    <width>891</width>
+    <height>830</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,14 +17,14 @@
    <widget class="QTabWidget" name="Robot_Control">
     <property name="geometry">
      <rect>
-      <x>510</x>
-      <y>250</y>
+      <x>340</x>
+      <y>290</y>
       <width>521</width>
       <height>201</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -436,8 +436,8 @@
    <widget class="QWidget" name="verticalLayoutWidget_8">
     <property name="geometry">
      <rect>
-      <x>510</x>
-      <y>140</y>
+      <x>340</x>
+      <y>160</y>
       <width>451</width>
       <height>118</height>
      </rect>
@@ -555,8 +555,8 @@
    <widget class="QWidget" name="verticalLayoutWidget_9">
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>40</y>
+      <x>340</x>
+      <y>60</y>
       <width>301</width>
       <height>92</height>
      </rect>
@@ -637,8 +637,8 @@
    <widget class="QLabel" name="label_RobotStatus">
     <property name="geometry">
      <rect>
-      <x>970</x>
-      <y>160</y>
+      <x>650</x>
+      <y>110</y>
       <width>81</width>
       <height>41</height>
      </rect>
@@ -650,7 +650,7 @@
    <widget class="QLabel" name="label_CameraStatus">
     <property name="geometry">
      <rect>
-      <x>910</x>
+      <x>650</x>
       <y>60</y>
       <width>111</width>
       <height>41</height>
@@ -663,8 +663,8 @@
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>640</x>
-      <y>10</y>
+      <x>340</x>
+      <y>30</y>
       <width>198</width>
       <height>26</height>
      </rect>
@@ -689,85 +689,11 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_4">
-    <property name="geometry">
-     <rect>
-      <x>510</x>
-      <y>480</y>
-      <width>331</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_16">
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_12">
-       <item>
-        <widget class="QLabel" name="LoopTime">
-         <property name="text">
-          <string>LoopTime</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="LoopTimeValue"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_4">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_13">
-       <item>
-        <widget class="QLabel" name="FeatureError">
-         <property name="text">
-          <string>FeatureError</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="FeatureErrorValue"/>
-       </item>
-      </layout>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QChartView" name="charts_feature_error" native="true">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>540</y>
-      <width>601</width>
-      <height>211</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-     </font>
-    </property>
-   </widget>
    <widget class="QPushButton" name="SaveDesiredImage">
     <property name="geometry">
      <rect>
-      <x>500</x>
-      <y>10</y>
+      <x>200</x>
+      <y>20</y>
       <width>131</width>
       <height>20</height>
      </rect>
@@ -779,8 +705,8 @@
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>60</y>
+      <x>10</x>
+      <y>40</y>
       <width>321</width>
       <height>481</height>
      </rect>
@@ -802,13 +728,52 @@
      </item>
     </layout>
    </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>540</y>
+      <width>851</width>
+      <height>241</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_12">
+     <item>
+      <widget class="QChartView" name="charts_feature_error" native="true">
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QChartView" name="charts_linear_velocity" native="true">
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QChartView" name="charts_angular_velocity" native="true">
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1113</width>
+     <width>891</width>
      <height>19</height>
     </rect>
    </property>

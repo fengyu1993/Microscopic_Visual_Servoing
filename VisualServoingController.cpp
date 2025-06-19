@@ -98,6 +98,12 @@ void VisualServoingController::executeControlCycle()
             QVariantMap visData;
             visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
             visData["feature_error"] = m_algorithm_DMVS->cost_function_value_;
+            visData["velocity_vx"] = velocity.at<double>(0);
+            visData["velocity_vy"] = velocity.at<double>(1);
+            visData["velocity_vz"] = velocity.at<double>(2);
+            visData["velocity_wx"] = velocity.at<double>(3);
+            visData["velocity_wy"] = velocity.at<double>(4);
+            visData["velocity_wz"] = velocity.at<double>(5);
             emit updateVisualServoingData(visData);
         } catch (const std::exception &e) {
             emit servoingError(QString("Control cycle error: %1").arg(e.what()));

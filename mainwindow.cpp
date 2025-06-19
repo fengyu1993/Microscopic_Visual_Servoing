@@ -54,23 +54,48 @@ void MainWindow::initUI()
 
     ui->pushButton_Start->setEnabled(true);
     ui->pushButton_Stop->setEnabled(false);
-    // 创建图表曲线系列
-    chart = new QChart();
-    chart->legend()->hide();
-    chart->setTitle("Feature error");
-
-    BlueSeries = new QLineSeries();
-    BlueSeries->setColor(Qt::blue);
-    RedSeries = new QLineSeries();
-    RedSeries->setColor(Qt::red);
-    GreenSeries = new QLineSeries();
-    GreenSeries->setColor(Qt::green);
-
-    chart->addSeries(BlueSeries);
-    chart->createDefaultAxes();
-    ui->charts_feature_error->setChart(chart);
+    // 创建特征误差图表曲线系列
+    chartFeatureError = new QChart();
+    chartFeatureError->legend()->hide();
+    chartFeatureError->setTitle("Feature error");
+    BlueSeries_FeatureError = new QLineSeries();
+    BlueSeries_FeatureError->setColor(Qt::blue);
+    chartFeatureError->addSeries(BlueSeries_FeatureError);
+    chartFeatureError->createDefaultAxes();
+    ui->charts_feature_error->setChart(chartFeatureError);
     ui->charts_feature_error->setRenderHint(QPainter::Antialiasing); // 抗锯齿
-
+    cost_min = 0.0;
+    cost_max = 0.0;
+    // 创建线速度图表曲线系列
+    chartLinarVelocity = new QChart();
+    chartLinarVelocity->legend()->hide();
+    chartLinarVelocity->setTitle("Linar Velocity");
+    RedSeries_Vx = new QLineSeries(); RedSeries_Vx->setColor(Qt::red);
+    GreenSeries_Vy = new QLineSeries(); GreenSeries_Vy->setColor(Qt::green);
+    BlueSeries_Vz = new QLineSeries();  BlueSeries_Vz->setColor(Qt::blue);
+    chartLinarVelocity->addSeries(RedSeries_Vx);
+    chartLinarVelocity->addSeries(GreenSeries_Vy);
+    chartLinarVelocity->addSeries(BlueSeries_Vz);
+    chartLinarVelocity->createDefaultAxes();
+    ui->charts_linear_velocity->setChart(chartLinarVelocity);
+    ui->charts_linear_velocity->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+    linear_velocity_min = 0.0;
+    linear_velocity_max = 0.0;
+    // 创建角速度图表曲线系列
+    chartAngularVelocity = new QChart();
+    chartAngularVelocity->legend()->hide();
+    chartAngularVelocity->setTitle("Angular Velocity");
+    CyanSeries_Wx = new QLineSeries(); CyanSeries_Wx->setColor(Qt::cyan);
+    YellowSeries_Wy = new QLineSeries(); YellowSeries_Wy->setColor(Qt::yellow);
+    MagentaSeries_Wz = new QLineSeries(); MagentaSeries_Wz->setColor(Qt::magenta);
+    chartAngularVelocity->addSeries(CyanSeries_Wx);
+    chartAngularVelocity->addSeries(YellowSeries_Wy);
+    chartAngularVelocity->addSeries(MagentaSeries_Wz);
+    chartAngularVelocity->createDefaultAxes();
+    ui->charts_angular_velocity->setChart(chartAngularVelocity);
+    ui->charts_angular_velocity->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+    angular_velocity_min = 0.0;
+    angular_velocity_max = 0.0;
 }
 
 void MainWindow::setupConnections()
@@ -159,18 +184,27 @@ void MainWindow::updateSystemStatus(const QString &status)
 
 void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
 {
-    if(visData.contains("loop_time")) {
-        ui->LoopTimeValue->setText(QString::number(visData.value("loop_time").toDouble()));
-    }
-    if(visData.contains("feature_error")) {
-        ui->FeatureErrorValue->setText(QString::number(visData.value("feature_error").toDouble()));
-    }
-
     double time = visData.value("loop_time").toDouble() / 1000.0;
     double cost = visData.value("feature_error").toDouble();
-    double Y_min, Y_max;
-    getdateSeries(BlueSeries, time, cost, Y_min, Y_max);
-    updateChart(ui->charts_feature_error, time, Y_min, Y_max);
+    double vx = visData.value("velocity_vx").toDouble();
+    double vy = visData.value("velocity_vy").toDouble();
+    double vz = visData.value("velocity_vz").toDouble();
+    double wx = visData.value("velocity_wx").toDouble();
+    double wy = visData.value("velocity_wy").toDouble();
+    double wz = visData.value("velocity_wz").toDouble();
+
+    getdateSeries(BlueSeries_FeatureError, time, cost, cost_min, cost_max);
+    updateChart(ui->charts_feature_error, time, cost_min, cost_max);
+
+    getdateSeries(RedSeries_Vx, time, vx, linear_velocity_min, linear_velocity_max);
+    getdateSeries(GreenSeries_Vy, time, vy, linear_velocity_min, linear_velocity_max);
+    getdateSeries(BlueSeries_Vz, time, vz, linear_velocity_min, linear_velocity_max);
+    updateChart(ui->charts_linear_velocity, time, linear_velocity_min, linear_velocity_max);
+
+    getdateSeries(CyanSeries_Wx, time, wx, angular_velocity_min, angular_velocity_max);
+    getdateSeries(YellowSeries_Wy, time, wy, angular_velocity_min, angular_velocity_max);
+    getdateSeries(MagentaSeries_Wz, time, wz, angular_velocity_min, angular_velocity_max);
+    updateChart(ui->charts_angular_velocity, time, angular_velocity_min, angular_velocity_max);
 }
 
 void MainWindow::initializeSystem()
@@ -184,7 +218,7 @@ void MainWindow::initializeSystem()
     ui->label_CameraStatus->setText("Connected");
     ui->label_RobotStatus->setText("Connected");
     ui->label_SystemStatus->setText("Successfully initialized");
-}
+ }
 
 void MainWindow::onSystemStart()
 {

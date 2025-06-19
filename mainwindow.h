@@ -135,12 +135,17 @@ private:
     bool m_systemRunning;
     bool m_systemPaused;
     // 图像显示
-    QChart *chart;
-    QChartView *chartView;
-    double xValue = 0;
-    QLineSeries *BlueSeries;
-    QLineSeries *RedSeries;
-    QLineSeries *GreenSeries;
+    QChart *chartFeatureError;
+    QChart *chartLinarVelocity;
+    QChart *chartAngularVelocity;
+    QLineSeries *BlueSeries_FeatureError;
+    QLineSeries *RedSeries_Vx;
+    QLineSeries *GreenSeries_Vy;
+    QLineSeries *BlueSeries_Vz;
+    QLineSeries *CyanSeries_Wx;
+    QLineSeries *YellowSeries_Wy;
+    QLineSeries *MagentaSeries_Wz;
+    double cost_min, cost_max, linear_velocity_min, linear_velocity_max, angular_velocity_min, angular_velocity_max;
     // 函数
     void initUI();
     void setupConnections();
