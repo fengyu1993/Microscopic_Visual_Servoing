@@ -20,6 +20,11 @@
 #include "ParallelPlatform.h"
 #include "direct_microscopic_visual_servoing.h"
 
+#define MODE_NULL                                  0
+#define MODE_VISUAL_SERVOING       1
+#define MODE_SHARPNESS                      2
+#define MODE_CALIBRATION                 3
+
 struct VS_Parameter {
     int resolution_x;
     int resolution_y;
@@ -48,6 +53,10 @@ public:
     void stopServoing();
     bool read_vs_parameter(QString location);
     void output_vs_parameter();
+    void setMode(int mode);
+    void visualServoingControl();
+    void sharpnessControl();
+    void calibrationControl();
 
 signals:
     void systemStatusChanged(const QString& status);
@@ -64,6 +73,8 @@ private:
     VS_Parameter vs_parameter;
     QElapsedTimer cycleTimer;
     int cnt;
+    int mode; // 0: Null; 1: Visual servoing; 2: Sharpness; 3: Microscope Calibration
+    double sharpness;
 
     void executeControlCycle();
 };

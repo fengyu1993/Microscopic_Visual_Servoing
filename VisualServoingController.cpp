@@ -30,7 +30,7 @@ VisualServoingController::VisualServoingController()
 
     m_isRunning = false;
     cnt = 0;
-
+    mode = MODE_NULL;
     connect(m_controlTimer, &QTimer::timeout, this, &VisualServoingController::executeControlCycle);
 }
 VisualServoingController::~VisualServoingController()
@@ -47,6 +47,23 @@ VisualServoingController::~VisualServoingController()
 }
 
 void VisualServoingController::executeControlCycle()
+{
+    switch (this->mode) {
+    case MODE_VISUAL_SERVOING:
+        visualServoingControl();
+        break;
+    case MODE_SHARPNESS:
+        sharpnessControl();
+        break;
+    case MODE_CALIBRATION:
+        calibrationControl();
+        break;
+    default:
+        break;
+    }
+}
+
+void VisualServoingController::visualServoingControl()
 {
     if(m_isRunning){
         qDebug() << "cnt: " << ++cnt;
@@ -111,6 +128,40 @@ void VisualServoingController::executeControlCycle()
         }
     }
 }
+
+void VisualServoingController::sharpnessControl()
+{
+    if(m_isRunning){
+        // 获取图像
+        Mat image  = m_camera->getLatestFrame();
+        // 计算Laplacian算子
+        Mat I_u, I_v, I_uu, I_vv, Delta_I;
+        m_algorithm_DMVS->get_image_gradient_u(image, I_u);
+        m_algorithm_DMVS->get_image_gradient_v(image, I_v);
+        m_algorithm_DMVS->get_image_gradient_u(I_u, I_uu);
+        m_algorithm_DMVS->get_image_gradient_v(I_v, I_vv);
+        cv::add(I_uu, I_vv, Delta_I);
+        // 计算锐度指标
+        cv::Scalar sum = cv::sum(cv::abs(Delta_I));
+        this->sharpness = sum[0];
+        // Scalar mean, stddev;
+        // meanStdDev(Delta_I, mean, stddev);
+        // this->sharpness = stddev.val[0] * stddev.val[0];
+        // 更新锐度数据
+        QVariantMap visData;
+        visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
+        visData["sharpness"] = this->sharpness;
+        emit updateVisualServoingData(visData);
+    }
+}
+
+void VisualServoingController::calibrationControl()
+{
+    if(m_isRunning){
+        qDebug() << "calibrationControl()";
+    }
+}
+
 
 bool VisualServoingController::initializeSystem()
 {
@@ -186,6 +237,24 @@ void VisualServoingController::output_vs_parameter()
     std::stringstream ss2;
     ss2 << vs_parameter.pose_desired;
     qDebug() << "pose_desired:\n" << ss2.str().c_str();
+}
+
+void VisualServoingController::setMode(int mode)
+{
+    this->mode = mode;
+    switch (this->mode){
+        case MODE_VISUAL_SERVOING:
+            qDebug() << "MODE_VISUAL_SERVOING";
+            break;
+        case MODE_SHARPNESS:
+            qDebug() << "MODE_SHARPNESS";
+            break;
+        case MODE_CALIBRATION:
+            qDebug() << "MODE_CALIBRATION";
+            break;
+        default:
+            qDebug() << "MODE_NULL";
+    }
 }
 
 bool VisualServoingController::read_vs_parameter(QString location) {

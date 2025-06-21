@@ -123,6 +123,12 @@ private slots:
 
     void on_SaveDesiredImage_clicked();
 
+    void on_radioButton_VisualServoing_clicked(bool checked);
+
+    void on_radioButton_Sharpness_clicked(bool checked);
+
+    void on_radioButton_Calibration_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
     VisualServoingController* m_visualServoingController = Q_NULLPTR;
@@ -138,6 +144,7 @@ private:
     QChart *chartFeatureError;
     QChart *chartLinarVelocity;
     QChart *chartAngularVelocity;
+    QChart *chartSharpness;
     QLineSeries *BlueSeries_FeatureError;
     QLineSeries *RedSeries_Vx;
     QLineSeries *GreenSeries_Vy;
@@ -145,7 +152,9 @@ private:
     QLineSeries *CyanSeries_Wx;
     QLineSeries *YellowSeries_Wy;
     QLineSeries *MagentaSeries_Wz;
-    double cost_min, cost_max, linear_velocity_min, linear_velocity_max, angular_velocity_min, angular_velocity_max;
+    QLineSeries *BlueSeries_Sharpness;
+    double cost_min, cost_max, linear_velocity_min, linear_velocity_max,
+                angular_velocity_min, angular_velocity_max, sharpness_min, sharpness_max;
     // 函数
     void initUI();
     void setupConnections();

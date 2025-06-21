@@ -96,8 +96,23 @@ void MainWindow::initUI()
     ui->charts_angular_velocity->setRenderHint(QPainter::Antialiasing); // 抗锯齿
     angular_velocity_min = 0.0;
     angular_velocity_max = 0.0;
-    // 显示期望图像
+    // 创建锐度图表曲线系列
+    chartSharpness = new QChart();
+    chartSharpness->legend()->hide();
+    chartSharpness->setTitle("Sharpness");
+    BlueSeries_Sharpness = new QLineSeries();
+    BlueSeries_Sharpness->setColor(Qt::blue);
+    chartSharpness->addSeries(BlueSeries_Sharpness);
+    chartSharpness->createDefaultAxes();
+    ui->charts_sharpness->setChart(chartSharpness);
+    ui->charts_sharpness->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+    sharpness_min = 0.0;
+    sharpness_max = 0.0;
 
+    // 模式选择
+    ui->radioButton_VisualServoing->setChecked(true);
+    ui->radioButton_Sharpness->setChecked(false);
+    ui->radioButton_Calibration->setChecked(false);
 }
 
 void MainWindow::setupConnections()
@@ -121,11 +136,11 @@ void MainWindow::getdateSeries(QLineSeries *series, double t, double pos, double
 
     // 增量更新最小值和最大值
     if (series->count() == 1) { // 初始化第一个点的情况
-        minY = pos*0.8;
-        maxY = pos*1.2;
+        minY = pos;
+        maxY = pos;
     } else {
-        minY = std::min(minY, pos)*0.8;
-        maxY = std::max(maxY, pos)*1.2;
+        minY = std::min(minY, pos);
+        maxY = std::max(maxY, pos);
     }
 }
 
@@ -185,27 +200,41 @@ void MainWindow::updateSystemStatus(const QString &status)
 
 void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
 {
-    double time = visData.value("loop_time").toDouble() / 1000.0;
-    double cost = visData.value("feature_error").toDouble();
-    double vx = visData.value("velocity_vx").toDouble();
-    double vy = visData.value("velocity_vy").toDouble();
-    double vz = visData.value("velocity_vz").toDouble();
-    double wx = visData.value("velocity_wx").toDouble();
-    double wy = visData.value("velocity_wy").toDouble();
-    double wz = visData.value("velocity_wz").toDouble();
+    if (visData.contains("loop_time") && visData.contains("feature_error") ) {
+        double time = visData.value("loop_time").toDouble() / 1000.0;
+        double cost = visData.value("feature_error").toDouble();
+        double vx = visData.value("velocity_vx").toDouble();
+        double vy = visData.value("velocity_vy").toDouble();
+        double vz = visData.value("velocity_vz").toDouble();
+        double wx = visData.value("velocity_wx").toDouble();
+        double wy = visData.value("velocity_wy").toDouble();
+        double wz = visData.value("velocity_wz").toDouble();
 
-    getdateSeries(BlueSeries_FeatureError, time, cost, cost_min, cost_max);
-    updateChart(ui->charts_feature_error, time, cost_min, cost_max);
+        getdateSeries(BlueSeries_FeatureError, time, cost, cost_min, cost_max);
+        updateChart(ui->charts_feature_error, time, cost_min, cost_max);
 
-    getdateSeries(RedSeries_Vx, time, vx, linear_velocity_min, linear_velocity_max);
-    getdateSeries(GreenSeries_Vy, time, vy, linear_velocity_min, linear_velocity_max);
-    getdateSeries(BlueSeries_Vz, time, vz, linear_velocity_min, linear_velocity_max);
-    updateChart(ui->charts_linear_velocity, time, linear_velocity_min, linear_velocity_max);
+        getdateSeries(RedSeries_Vx, time, vx, linear_velocity_min, linear_velocity_max);
+        getdateSeries(GreenSeries_Vy, time, vy, linear_velocity_min, linear_velocity_max);
+        getdateSeries(BlueSeries_Vz, time, vz, linear_velocity_min, linear_velocity_max);
+        updateChart(ui->charts_linear_velocity, time, linear_velocity_min, linear_velocity_max);
 
-    getdateSeries(CyanSeries_Wx, time, wx, angular_velocity_min, angular_velocity_max);
-    getdateSeries(YellowSeries_Wy, time, wy, angular_velocity_min, angular_velocity_max);
-    getdateSeries(MagentaSeries_Wz, time, wz, angular_velocity_min, angular_velocity_max);
-    updateChart(ui->charts_angular_velocity, time, angular_velocity_min, angular_velocity_max);
+        getdateSeries(CyanSeries_Wx, time, wx, angular_velocity_min, angular_velocity_max);
+        getdateSeries(YellowSeries_Wy, time, wy, angular_velocity_min, angular_velocity_max);
+        getdateSeries(MagentaSeries_Wz, time, wz, angular_velocity_min, angular_velocity_max);
+        updateChart(ui->charts_angular_velocity, time, angular_velocity_min, angular_velocity_max);
+    }
+
+    if (visData.contains("loop_time") && visData.contains("sharpness") ) {
+        double time = visData.value("loop_time").toDouble() / 1000.0;
+        double sharpness = visData.value("sharpness").toDouble();
+        ui->SharpnessValue->setText(QString::number(sharpness));
+
+        qDebug() << "sharpness: " << sharpness;
+        qDebug() << "sharpness_min: " << sharpness_min;
+        qDebug() << "sharpness_max: " << sharpness_max;
+        getdateSeries(BlueSeries_Sharpness, time, sharpness, sharpness_min, sharpness_max);
+        updateChart(ui->charts_sharpness, time, sharpness_min, sharpness_max);
+    }
 }
 
 void MainWindow::initializeSystem()
@@ -243,6 +272,16 @@ void MainWindow::onSystemStart()
     // 启动图像采集
     on_pushButton_Connect_clicked(true);
     on_pushButton_StartCamera_clicked(true);
+    // 判断模式
+    if (ui->radioButton_VisualServoing->isChecked()) {
+        this->m_visualServoingController ->setMode(MODE_VISUAL_SERVOING);
+    } else if (ui->radioButton_Sharpness->isChecked()) {
+        this->m_visualServoingController ->setMode(MODE_SHARPNESS);
+    } else if (ui->radioButton_Calibration->isChecked()) {
+        this->m_visualServoingController ->setMode(MODE_CALIBRATION);
+    } else {
+        qDebug() << "没有模式被选中";
+    }
 
     // 启动机器状态更新
     this->m_visualServoingController->m_robot->startupdate();
@@ -817,3 +856,26 @@ void MainWindow::on_SaveDesiredImage_clicked()
     displayDesiredImage();
 }
 
+
+void MainWindow::on_radioButton_VisualServoing_clicked(bool checked)
+{
+    if(checked){
+        this->m_visualServoingController ->setMode(MODE_VISUAL_SERVOING);
+    }
+}
+
+
+void MainWindow::on_radioButton_Sharpness_clicked(bool checked)
+{
+    if(checked){
+        this->m_visualServoingController ->setMode(MODE_SHARPNESS);
+    }
+}
+
+
+void MainWindow::on_radioButton_Calibration_clicked(bool checked)
+{
+    if(checked){
+        this->m_visualServoingController ->setMode(MODE_CALIBRATION);
+    }
+}

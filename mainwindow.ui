@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>891</width>
+    <width>1349</width>
     <height>830</height>
    </rect>
   </property>
@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -665,7 +665,7 @@
      <rect>
       <x>340</x>
       <y>30</y>
-      <width>198</width>
+      <width>491</width>
       <height>26</height>
      </rect>
     </property>
@@ -687,13 +687,34 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_VisualServoing">
+       <property name="text">
+        <string>VisualServoing</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_Sharpness">
+       <property name="text">
+        <string>Sharpness</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_Calibration">
+       <property name="text">
+        <string>Calibration</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
    <widget class="QPushButton" name="SaveDesiredImage">
     <property name="geometry">
      <rect>
-      <x>200</x>
-      <y>20</y>
+      <x>330</x>
+      <y>500</y>
       <width>131</width>
       <height>20</height>
      </rect>
@@ -736,7 +757,7 @@ border-width: 2px</string>
      <string/>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -775,13 +796,63 @@ border-width: 2px</string>
      </item>
     </layout>
    </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>70</y>
+      <width>181</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_13">
+     <item>
+      <widget class="QLabel" name="label_CameraStatus_2">
+       <property name="text">
+        <string>Sharpness</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="SharpnessValue">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="margin">
+        <number>2</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QChartView" name="charts_sharpness" native="true">
+    <property name="geometry">
+     <rect>
+      <x>930</x>
+      <y>120</y>
+      <width>280</width>
+      <height>239</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+     </font>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>891</width>
+     <width>1349</width>
      <height>19</height>
     </rect>
    </property>
