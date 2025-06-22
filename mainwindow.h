@@ -32,6 +32,10 @@ private slots:
 
     void updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose);
 
+    void updateVisualServoingImage(QImage img);
+
+    void updateCalibrationImage(QImage img);
+
     void updateVSVisualizationData(const QVariantMap& visData);
 
     void on_pushButton_StartCamera_clicked(bool checked);
@@ -120,7 +124,6 @@ private slots:
 
     void on_MoveToZero_2_clicked();
 
-
     void on_SaveDesiredImage_clicked();
 
     void on_radioButton_VisualServoing_clicked(bool checked);
@@ -128,6 +131,38 @@ private slots:
     void on_radioButton_Sharpness_clicked(bool checked);
 
     void on_radioButton_Calibration_clicked(bool checked);
+
+    void on_circle_du_p_clicked();
+
+    void on_circle_du_n_clicked();
+
+    void on_circle_dv_p_clicked();
+
+    void on_circle_dv_n_clicked();
+
+    void on_circle_dr_p_clicked();
+
+    void on_circle_dr_n_clicked();
+
+    void on_Calibration_Step_1_clicked(bool checked);
+
+    void on_Calibration_Step_2_clicked(bool checked);
+
+    void on_Calibration_Step_3_clicked(bool checked);
+
+    void on_Calibration_Step_4_clicked(bool checked);
+
+    void on_Calibration_Step_5_clicked(bool checked);
+
+    void on_Calibration_Step_6_clicked(bool checked);
+
+    void on_Calibration_Step_7_clicked(bool checked);
+
+    void on_Calibration_Step_8_clicked(bool checked);
+
+    void on_Calibration_Step_9_clicked(bool checked);
+
+    void on_record_calibration_point_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -140,6 +175,10 @@ private:
     // 状态变量
     bool m_systemRunning;
     bool m_systemPaused;
+    // 修正圆
+    int circle_du = 0;
+    int circle_dv = 0;
+    int circle_dr = 0;
     // 图像显示
     QChart *chartFeatureError;
     QChart *chartLinarVelocity;

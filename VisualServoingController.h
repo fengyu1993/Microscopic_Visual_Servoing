@@ -54,14 +54,20 @@ public:
     bool read_vs_parameter(QString location);
     void output_vs_parameter();
     void setMode(int mode);
+    int getMode();
     void visualServoingControl();
     void sharpnessControl();
     void calibrationControl();
+    void setCircleDxDyDr(int dx, int dy, int dr);
+    void setStepCalibration(int step);
+    void enableflagRecord(bool flag);
 
 signals:
     void systemStatusChanged(const QString& status);
     void servoingError(const QString& error);
     void updateVisualServoingData(const QVariantMap& visData);
+    void sigCalibrationImage(QImage img);
+
 
 public:
     BaslerCameraControl* m_camera = Q_NULLPTR;
@@ -73,9 +79,20 @@ private:
     VS_Parameter vs_parameter;
     QElapsedTimer cycleTimer;
     int cnt;
+    int circle_du, circle_dv, circle_dr;
     int mode; // 0: Null; 1: Visual servoing; 2: Sharpness; 3: Microscope Calibration
     double sharpness;
-
+    Mat circle_center;
+    bool flagRecord;
+    int stepCalibration; // 1:   找到焦平面
+                                      // 2:   沿x移动采点
+                                      // 3:   沿y移动采点
+                                      // 4:   Z轴向上方向移动
+                                      // 5:   沿xy移动采点
+                                      // 6:   Z轴向下方向移动
+                                      // 7:   xy移动采点
+                                      // 8:   回到焦平面后,  绕Z轴转动并采点
+                                      // 9:    计算参数
     void executeControlCycle();
 };
 

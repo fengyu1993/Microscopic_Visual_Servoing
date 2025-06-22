@@ -31,6 +31,12 @@ VisualServoingController::VisualServoingController()
     m_isRunning = false;
     cnt = 0;
     mode = MODE_NULL;
+    circle_du = 0;
+    circle_dv = 0;
+    circle_dr = 0;
+    circle_center = cv::Mat::zeros(2, 1, CV_64FC1);
+    flagRecord = false;
+
     connect(m_controlTimer, &QTimer::timeout, this, &VisualServoingController::executeControlCycle);
 }
 VisualServoingController::~VisualServoingController()
@@ -157,11 +163,181 @@ void VisualServoingController::sharpnessControl()
 
 void VisualServoingController::calibrationControl()
 {
-    if(m_isRunning){
-        qDebug() << "calibrationControl()";
+    if(m_isRunning)
+    {
+        // 获取执行器位姿
+        Mat T = m_robot->getTaskMat_cv();
+        // 获取图像
+        // Mat image  = m_camera->getLatestFrame();
+        Mat image  = this->m_algorithm_DMVS->image_gray_desired_.clone();
+        // 中值模糊减少噪声
+        Mat src_8u;
+        image.convertTo(src_8u, CV_8U, 255.0);
+        medianBlur(src_8u, src_8u, 5);
+        // 检测所有可能的圆
+        vector<Vec3f> circles;
+        // HoughCircles(src_8u, circles, HOUGH_GRADIENT, 1,
+        //              src_8u.rows/8,   // 增大最小距离以减少检测数量
+        //              200, 30,      // 提高阈值以获取更可靠的圆
+        //              30, 200);
+
+        HoughCircles(src_8u, circles, HOUGH_GRADIENT, 1,
+                     src_8u.rows/16,  // 两个圆之间的最小距离
+                     100, 30,       // 参数1和参数2
+                     30, 100        // 最小和最大半径
+                     );
+        qDebug() << "Circles" << circles.size();
+        // 选择最可靠的圆（基于累加器值）
+            if (!circles.empty())
+        {
+            // 按置信度排序（假设最后一个参数是置信度，实际需要根据OpenCV版本调整）
+            sort(circles.begin(), circles.end(),
+                 [](const Vec3f& a, const Vec3f& b) {
+                     return a[2] > b[2]; // 按半径排序，或使用其他标准
+                 });
+            // 取第一个（最可靠的）圆
+            Vec3f bestCircle = circles[0];
+            Point center(cvRound(bestCircle[0])  + circle_du, cvRound(bestCircle[1]) + circle_dv);
+            int radius = cvRound(bestCircle[2]) + circle_dr;
+            // 创建纯红色图像
+            Mat redMask = Mat::zeros(src_8u.size(), CV_8UC3);
+            circle(redMask, center, radius, Scalar(0, 0, 255), 2);
+            circle(redMask, center, 3, Scalar(0, 0, 255), -1);
+            // 将灰度图转为三通道
+            Mat threeChannelGray;
+            cvtColor(src_8u, threeChannelGray, COLOR_GRAY2BGR);
+            // 合并红色标记覆盖到灰度图上
+            addWeighted(threeChannelGray, 1.0, redMask, 1.0, 0.0, threeChannelGray);
+        //     // 输出显示
+            QImage img =  this->m_camera->cvMatToQImage(threeChannelGray);
+            emit sigCalibrationImage(img);
+            circle_center.at<double>(0, 0) = bestCircle[0] + circle_du;
+            circle_center.at<double>(1, 0) = bestCircle[1] + circle_dv;
+            qDebug() << "center_x: " << circle_center.at<double>(0, 0);
+            qDebug() << "center_y: " << circle_center.at<double>(1, 0);
+            qDebug() << "center_r: " << cvRound(bestCircle[2]) + circle_dr;
+        }
+         else{
+                QImage img =  this->m_camera->cvMatToQImage(src_8u);
+                emit sigCalibrationImage(img);
+                qDebug() << "图像未检测出圆形，请调整HoughCircles函数的参数";
+        }
+        // 标定
+        switch (this->stepCalibration) {
+        case 1: // 1:   找到焦平面
+            qDebug() << "stepCalibration: 1";
+            sharpnessControl();
+            if(this->flagRecord){
+
+
+
+            }
+            enableflagRecord(false);
+            break;
+        case 2: // 2:   沿x移动采点
+            qDebug() << "stepCalibration: 2";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 3: // 3:   沿y移动采点
+            qDebug() << "stepCalibration: 3";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 4: // 4:   Z轴向上方向移动
+            qDebug() << "stepCalibration: 4";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 5: // 5:   沿xy移动采点
+            qDebug() << "stepCalibration: 5";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 6: // 6:   Z轴向下方向移动
+            qDebug() << "stepCalibration: 6";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 7: // 7:   xy移动采点
+            qDebug() << "stepCalibration: 7";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 8: // 8:   回到焦平面后,  绕Z轴转动并采点
+            qDebug() << "stepCalibration: 8";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        case 9:   // 9:    计算参数
+            qDebug() << "stepCalibration: 9";
+            if(this->flagRecord){
+                qDebug() << "RecordPoint";
+
+
+
+                enableflagRecord(false);
+            }
+            break;
+        default:
+            break;
+        }
+
+
     }
 }
 
+void VisualServoingController::enableflagRecord(bool flag)
+{
+    this->flagRecord = flag;
+}
+
+void VisualServoingController::setStepCalibration(int step)
+{
+    this->stepCalibration = step;
+}
+
+void VisualServoingController::setCircleDxDyDr(int dx, int dy, int dr)
+{
+    this->circle_du = dx;
+    this->circle_dv = dy;
+    this->circle_dr = dr;
+}
 
 bool VisualServoingController::initializeSystem()
 {
@@ -255,6 +431,11 @@ void VisualServoingController::setMode(int mode)
         default:
             qDebug() << "MODE_NULL";
     }
+}
+
+int VisualServoingController::getMode()
+{
+    return this->mode;
 }
 
 bool VisualServoingController::read_vs_parameter(QString location) {

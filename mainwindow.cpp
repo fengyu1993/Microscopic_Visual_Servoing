@@ -1,7 +1,7 @@
 #include <QDebug>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -51,9 +51,17 @@ void MainWindow::initUI()
     this->ui->linear_position_step->setText(QString::number(this->linearPositionStep));
     this->ui->angular_position_step->setText(QString::number(this->angularPositionStep));
     this->ui->Robot_Control->setCurrentIndex(0);
-
     ui->pushButton_Start->setEnabled(true);
     ui->pushButton_Stop->setEnabled(false);
+    ui->Calibration_Step_1->setEnabled(false);
+    ui->Calibration_Step_2->setEnabled(false);
+    ui->Calibration_Step_3->setEnabled(false);
+    ui->Calibration_Step_4->setEnabled(false);
+    ui->Calibration_Step_5->setEnabled(false);
+    ui->Calibration_Step_6->setEnabled(false);
+    ui->Calibration_Step_7->setEnabled(false);
+    ui->Calibration_Step_8->setEnabled(false);
+    ui->Calibration_Step_9->setEnabled(false);
     // 创建特征误差图表曲线系列
     chartFeatureError = new QChart();
     chartFeatureError->legend()->hide();
@@ -108,7 +116,6 @@ void MainWindow::initUI()
     ui->charts_sharpness->setRenderHint(QPainter::Antialiasing); // 抗锯齿
     sharpness_min = 0.0;
     sharpness_max = 0.0;
-
     // 模式选择
     ui->radioButton_VisualServoing->setChecked(true);
     ui->radioButton_Sharpness->setChecked(false);
@@ -121,10 +128,8 @@ void MainWindow::setupConnections()
     connect(ui->pushButton_Stop, &QPushButton::clicked, this, &MainWindow::onSystemStop);
 
     connect(this-> m_visualServoingController->m_robot, &ParallelPlatform::sig_updateRobotData, this, &MainWindow::updateRobotStatus);
-    connect(this->m_visualServoingController->m_camera, &BaslerCameraControl::sigCurrentImage, [=](QImage img){
-        QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
-        ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
-    });
+    connect(this-> m_visualServoingController->m_camera, &BaslerCameraControl::sigCurrentImage, this, &MainWindow::updateVisualServoingImage);
+    connect(this-> m_visualServoingController, &VisualServoingController::sigCalibrationImage, this, &MainWindow::updateCalibrationImage);
     connect(this->m_visualServoingController, &VisualServoingController::systemStatusChanged, this, &MainWindow::updateSystemStatus);
     connect(this->m_visualServoingController, &VisualServoingController::updateVisualServoingData, this, &MainWindow::updateVSVisualizationData);
 }
@@ -198,6 +203,22 @@ void MainWindow::updateSystemStatus(const QString &status)
 
 }
 
+void MainWindow::updateVisualServoingImage(QImage img)
+{
+    if(this->m_visualServoingController->getMode() == MODE_VISUAL_SERVOING){
+        QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
+        ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
+    }
+}
+
+void MainWindow::updateCalibrationImage(QImage img)
+{
+    if(this->m_visualServoingController->getMode() == MODE_CALIBRATION){
+        QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
+        ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
+    }
+}
+
 void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
 {
     if (visData.contains("loop_time") && visData.contains("feature_error") ) {
@@ -227,11 +248,6 @@ void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
     if (visData.contains("loop_time") && visData.contains("sharpness") ) {
         double time = visData.value("loop_time").toDouble() / 1000.0;
         double sharpness = visData.value("sharpness").toDouble();
-        ui->SharpnessValue->setText(QString::number(sharpness));
-
-        qDebug() << "sharpness: " << sharpness;
-        qDebug() << "sharpness_min: " << sharpness_min;
-        qDebug() << "sharpness_max: " << sharpness_max;
         getdateSeries(BlueSeries_Sharpness, time, sharpness, sharpness_min, sharpness_max);
         updateChart(ui->charts_sharpness, time, sharpness_min, sharpness_max);
     }
@@ -258,11 +274,6 @@ void MainWindow::initializeSystem()
                      (m_visualServoingController->m_algorithm_DMVS->image_gray_desired_);
      QPixmap pixmap = QPixmap::fromImage(qImage);
     ui->label_pic_desired->setPixmap(pixmap.scaled(ui->label_pic_desired->size(), Qt::KeepAspectRatio));
-
-
-     // qDebug() << "label_pic_desired size: " << ui->label_pic_desired->size();
-     // qDebug() << "label_pic size: " << ui->label_pic->size();
-
  }
 
 void MainWindow::onSystemStart()
@@ -279,6 +290,7 @@ void MainWindow::onSystemStart()
         this->m_visualServoingController ->setMode(MODE_SHARPNESS);
     } else if (ui->radioButton_Calibration->isChecked()) {
         this->m_visualServoingController ->setMode(MODE_CALIBRATION);
+        ui->Calibration_Step_1->setEnabled(true);
     } else {
         qDebug() << "没有模式被选中";
     }
@@ -301,7 +313,7 @@ void MainWindow::onSystemStart()
     ui->pushButton_StartCamera->setEnabled(false);
     ui->getState->setEnabled(false);
     ui->FindReferance->setEnabled(false);
-    statusBar()->showMessage("系统已启动", 3000);
+    statusBar()->showMessage("系统已启动", 300);
 }
 
 void MainWindow::onSystemStop()
@@ -330,7 +342,7 @@ void MainWindow::onSystemStop()
     ui->pushButton_StartCamera->setEnabled(true);
     ui->getState->setEnabled(true);
     ui->FindReferance->setEnabled(true);
-    statusBar()->showMessage("系统已停止", 3000);
+    statusBar()->showMessage("系统已停止", 300);
 }
 
 
@@ -879,3 +891,183 @@ void MainWindow::on_radioButton_Calibration_clicked(bool checked)
         this->m_visualServoingController ->setMode(MODE_CALIBRATION);
     }
 }
+
+void MainWindow::on_circle_du_p_clicked()
+{
+    this->circle_du++;
+    this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+}
+
+
+void MainWindow::on_circle_du_n_clicked()
+{
+    this->circle_du--;
+    this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+}
+
+
+void MainWindow::on_circle_dv_p_clicked()
+{
+    this->circle_dv++;
+    this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+}
+
+
+void MainWindow::on_circle_dv_n_clicked()
+{
+    this->circle_dv--;
+    this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+}
+
+
+void MainWindow::on_circle_dr_p_clicked()
+{
+    this->circle_dr++;
+    this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+}
+
+
+void MainWindow::on_circle_dr_n_clicked()
+{
+    this->circle_dr--;
+    this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+}
+
+
+void MainWindow::on_Calibration_Step_1_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第一步：请找到焦平面");
+        ui->Calibration_Step_1->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(1);
+    }
+    else{
+        ui->Calibration_Step_1->setEnabled(false);
+        ui->Calibration_Step_2->setEnabled(true);
+    }
+}
+
+    // 3:   沿y移动采点
+    // 4:   Z轴向上方向移动
+    // 5:   沿xy移动采点
+    // 6:   Z轴向下方向移动
+    // 7:   xy移动采点
+    // 8:   回到焦平面后,  绕Z轴转动并采点
+    // 9:    计算参数
+
+void MainWindow::on_Calibration_Step_2_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第二步：请仅沿x方向移动并采点");
+        ui->Calibration_Step_2->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(2);
+    }
+    else{
+        ui->Calibration_Step_2->setEnabled(false);
+        ui->Calibration_Step_3->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_3_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_3->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(3);
+    }
+    else{
+        ui->Calibration_Step_3->setEnabled(false);
+        ui->Calibration_Step_4->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_4_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_4->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(4);
+    }
+    else{
+        ui->Calibration_Step_4->setEnabled(false);
+        ui->Calibration_Step_5->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_5_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_5->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(5);
+    }
+    else{
+        ui->Calibration_Step_5->setEnabled(false);
+        ui->Calibration_Step_6->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_6_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_6->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(6);
+    }
+    else{
+        ui->Calibration_Step_6->setEnabled(false);
+        ui->Calibration_Step_7->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_7_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_7->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(7);
+    }
+    else{
+        ui->Calibration_Step_7->setEnabled(false);
+        ui->Calibration_Step_8->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_8_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_8->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(8);
+    }
+    else{
+        ui->Calibration_Step_8->setEnabled(false);
+        ui->Calibration_Step_9->setEnabled(true);
+    }
+}
+
+
+void MainWindow::on_Calibration_Step_9_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        ui->Calibration_Step_9->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(9);
+    }
+    else{
+        ui->Calibration_Step_9->setEnabled(false);
+    }
+}
+
+
+void MainWindow::on_record_calibration_point_clicked()
+{
+    this->m_visualServoingController->enableflagRecord(true);
+}
+
