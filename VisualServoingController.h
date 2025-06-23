@@ -52,6 +52,7 @@ struct Calibration_Data{
     Mat pointsPXYZMoveXYDp = cv::Mat::zeros(3, 0, CV_64F);
     Mat pointsPuvRotateZD0 = cv::Mat::zeros(2, 0, CV_64F); // 7: 焦平面, 绕Z轴转动并采点
     Mat pointsPXYZRotateZD0 = cv::Mat::zeros(3, 0, CV_64F);
+    std::vector<cv::Mat> posesTsRotateZD0;
 };
 
 struct Microscopic_Parameter{
