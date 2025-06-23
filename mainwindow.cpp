@@ -45,7 +45,7 @@ void MainWindow::initUI()
     this->angularVelocityStep = 5000.0;
     this->linearPositionStep = 5000.0;
     this->angularPositionStep = 5000.0;
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     this->ui->linear_velocity_step->setText(QString::number(this->linearVelocityStep));
     this->ui->angular_velocity_step->setText(QString::number(this->angularVelocityStep));
     this->ui->linear_position_step->setText(QString::number(this->linearPositionStep));
@@ -61,7 +61,6 @@ void MainWindow::initUI()
     ui->Calibration_Step_6->setEnabled(false);
     ui->Calibration_Step_7->setEnabled(false);
     ui->Calibration_Step_8->setEnabled(false);
-    ui->Calibration_Step_9->setEnabled(false);
     // 创建特征误差图表曲线系列
     chartFeatureError = new QChart();
     chartFeatureError->legend()->hide();
@@ -205,7 +204,9 @@ void MainWindow::updateSystemStatus(const QString &status)
 
 void MainWindow::updateVisualServoingImage(QImage img)
 {
-    if(this->m_visualServoingController->getMode() == MODE_VISUAL_SERVOING){
+    if(this->m_visualServoingController->getMode() == MODE_VISUAL_SERVOING ||
+        this->m_visualServoingController->getMode() == MODE_NULL)
+    {
         QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
     }
@@ -489,7 +490,7 @@ void MainWindow::on_angular_velocity_step_editingFinished()
 
 void MainWindow::on_Vx_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(0) += this->linearVelocityStep;
@@ -503,7 +504,7 @@ void MainWindow::on_Vx_p_clicked()
 
 void MainWindow::on_Vx_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(0) -= this->linearVelocityStep;
@@ -517,7 +518,7 @@ void MainWindow::on_Vx_n_clicked()
 
 void MainWindow::on_Vy_p_clicked()
 {   
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(1) += this->linearVelocityStep;
@@ -531,7 +532,7 @@ void MainWindow::on_Vy_p_clicked()
 
 void MainWindow::on_Vy_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(1) -= this->linearVelocityStep;
@@ -544,7 +545,7 @@ void MainWindow::on_Vy_n_clicked()
 
 void MainWindow::on_Vz_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(2) += this->linearVelocityStep;
@@ -558,7 +559,7 @@ void MainWindow::on_Vz_p_clicked()
 
 void MainWindow::on_Vz_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(2) -= this->linearVelocityStep;
@@ -572,7 +573,7 @@ void MainWindow::on_Vz_n_clicked()
 
 void MainWindow::on_Wx_p_clicked()
 {    
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(3) += this->angularVelocityStep;
@@ -585,7 +586,7 @@ void MainWindow::on_Wx_p_clicked()
 
 void MainWindow::on_Wx_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(3) -= this->angularVelocityStep;
@@ -599,7 +600,7 @@ void MainWindow::on_Wx_n_clicked()
 
 void MainWindow::on_Wy_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(4) += this->angularVelocityStep;
@@ -613,7 +614,7 @@ void MainWindow::on_Wy_p_clicked()
 
 void MainWindow::on_Wy_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(4) -= this->angularVelocityStep;
@@ -627,7 +628,7 @@ void MainWindow::on_Wy_n_clicked()
 
 void MainWindow::on_Wz_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(5) += this->angularVelocityStep;
@@ -641,7 +642,7 @@ void MainWindow::on_Wz_p_clicked()
 
 void MainWindow::on_Wz_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 0;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     Eigen::VectorXd target_velocity;
     this->m_visualServoingController->m_robot->getTargetVelocity(target_velocity);
     target_velocity(5) -= this->angularVelocityStep;
@@ -656,10 +657,10 @@ void MainWindow::on_Wz_n_clicked()
 void MainWindow::on_Robot_Control_tabBarClicked(int index)
 {
     if(index == 0){
-        this->m_visualServoingController->m_robot->controlMode_ = 0;//Velocity
+        this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);//Velocity
     }
     else if(index == 1){
-        this->m_visualServoingController->m_robot->controlMode_ = 1;//Position
+        this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);//Position
     }
 
     // qDebug() << "controlMode_:\n" << this->m_visualServoingController->m_robot->controlMode_;
@@ -692,7 +693,7 @@ void MainWindow::on_Stop_2_clicked()
 
 void MainWindow::on_Px_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -704,7 +705,7 @@ void MainWindow::on_Px_p_clicked()
 
 void MainWindow::on_Px_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -716,7 +717,7 @@ void MainWindow::on_Px_n_clicked()
 
 void MainWindow::on_Py_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -728,7 +729,7 @@ void MainWindow::on_Py_p_clicked()
 
 void MainWindow::on_Py_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -740,7 +741,7 @@ void MainWindow::on_Py_n_clicked()
 
 void MainWindow::on_Pz_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -752,7 +753,7 @@ void MainWindow::on_Pz_p_clicked()
 
 void MainWindow::on_Pz_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -764,7 +765,7 @@ void MainWindow::on_Pz_n_clicked()
 
 void MainWindow::on_Rx_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -776,7 +777,7 @@ void MainWindow::on_Rx_p_clicked()
 
 void MainWindow::on_Rx_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -788,7 +789,7 @@ void MainWindow::on_Rx_n_clicked()
 
 void MainWindow::on_Ry_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -800,7 +801,7 @@ void MainWindow::on_Ry_p_clicked()
 
 void MainWindow::on_Ry_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -812,7 +813,7 @@ void MainWindow::on_Ry_n_clicked()
 
 void MainWindow::on_Rz_p_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -824,7 +825,7 @@ void MainWindow::on_Rz_p_clicked()
 
 void MainWindow::on_Rz_n_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 1;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_POSITION);
     Eigen::VectorXd target_positions;
     bool result = this->m_visualServoingController->m_robot->getTaskPositions(target_positions);
     if(result){
@@ -838,7 +839,7 @@ void MainWindow::on_Rz_n_clicked()
 
 void MainWindow::on_MoveToZero_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 3;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_MOVE_TO_ZERO);
 }
 
 
@@ -856,7 +857,7 @@ void MainWindow::on_StopUpdate_clicked()
 
 void MainWindow::on_MoveToZero_2_clicked()
 {
-    this->m_visualServoingController->m_robot->controlMode_ = 3;
+    this->m_visualServoingController->m_robot->setRobotMode(ROBOT_MOVE_TO_ZERO);
 }
 
 
@@ -947,18 +948,11 @@ void MainWindow::on_Calibration_Step_1_clicked(bool checked)
     }
 }
 
-    // 3:   沿y移动采点
-    // 4:   Z轴向上方向移动
-    // 5:   沿xy移动采点
-    // 6:   Z轴向下方向移动
-    // 7:   xy移动采点
-    // 8:   回到焦平面后,  绕Z轴转动并采点
-    // 9:    计算参数
 
 void MainWindow::on_Calibration_Step_2_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第二步：请仅沿x方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第二步：请先将特征点移至左下角，再仅沿x方向移动并采点");
         ui->Calibration_Step_2->setText("Finish");
         this->m_visualServoingController->setStepCalibration(2);
     }
@@ -986,7 +980,7 @@ void MainWindow::on_Calibration_Step_3_clicked(bool checked)
 void MainWindow::on_Calibration_Step_4_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第四步：请沿Z轴向上移动后，再沿xy移动并采点");
         ui->Calibration_Step_4->setText("Finish");
         this->m_visualServoingController->setStepCalibration(4);
     }
@@ -1000,7 +994,7 @@ void MainWindow::on_Calibration_Step_4_clicked(bool checked)
 void MainWindow::on_Calibration_Step_5_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第五步：请沿Z轴向下移动后，再沿xy移动并采点");
         ui->Calibration_Step_5->setText("Finish");
         this->m_visualServoingController->setStepCalibration(5);
     }
@@ -1014,7 +1008,7 @@ void MainWindow::on_Calibration_Step_5_clicked(bool checked)
 void MainWindow::on_Calibration_Step_6_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第六步：回到焦平面");
         ui->Calibration_Step_6->setText("Finish");
         this->m_visualServoingController->setStepCalibration(6);
     }
@@ -1028,7 +1022,7 @@ void MainWindow::on_Calibration_Step_6_clicked(bool checked)
 void MainWindow::on_Calibration_Step_7_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第七步：绕Z轴转动并采点");
         ui->Calibration_Step_7->setText("Finish");
         this->m_visualServoingController->setStepCalibration(7);
     }
@@ -1042,26 +1036,12 @@ void MainWindow::on_Calibration_Step_7_clicked(bool checked)
 void MainWindow::on_Calibration_Step_8_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第八步：计算参数");
         ui->Calibration_Step_8->setText("Finish");
         this->m_visualServoingController->setStepCalibration(8);
     }
     else{
         ui->Calibration_Step_8->setEnabled(false);
-        ui->Calibration_Step_9->setEnabled(true);
-    }
-}
-
-
-void MainWindow::on_Calibration_Step_9_clicked(bool checked)
-{
-    if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
-        ui->Calibration_Step_9->setText("Finish");
-        this->m_visualServoingController->setStepCalibration(9);
-    }
-    else{
-        ui->Calibration_Step_9->setEnabled(false);
     }
 }
 

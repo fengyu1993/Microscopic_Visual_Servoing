@@ -37,8 +37,29 @@ struct VS_Parameter {
     Mat pose_desired;
     Mat Tbc;
     int max_iteration;
-
     bool is_initialized = false;
+};
+
+struct Calibration_Data{
+    Eigen::VectorXd robotFocusPose = Eigen::VectorXd::Zero(6); // 1:   找到焦平面
+    Mat pointsPuvMoveXD0 = cv::Mat::zeros(2, 0, CV_64F); // 2:   焦平面, 沿x移动采点
+    Mat pointsPXYZMoveXD0 = cv::Mat::zeros(3, 0, CV_64F);
+    Mat pointsPuvMoveYD0 = cv::Mat::zeros(2, 0, CV_64F);  // 3:   焦平面, 沿y移动采点
+    Mat pointsPXYZMoveYD0 = cv::Mat::zeros(3, 0, CV_64F);
+    Mat pointsPuvMoveXYDn = cv::Mat::zeros(2, 0, CV_64F); // 4:   Z轴向上移动后，再沿xy移动采点
+    Mat pointsPXYZMoveXYDn = cv::Mat::zeros(3, 0, CV_64F);
+    Mat pointsPuvMoveXYDp = cv::Mat::zeros(2, 0, CV_64F); // 5:   Z轴向下移动后，再沿xy移动采点
+    Mat pointsPXYZMoveXYDp = cv::Mat::zeros(3, 0, CV_64F);
+    Mat pointsPuvRotateZD0 = cv::Mat::zeros(2, 0, CV_64F); // 7: 焦平面, 绕Z轴转动并采点
+    Mat pointsPXYZRotateZD0 = cv::Mat::zeros(3, 0, CV_64F);
+};
+
+struct Microscopic_Parameter{
+    double c_u;
+    double c_v;
+    double Z_f;
+    double D_f_k_uv;
+    Mat Tbc = cv::Mat::eye(4, 4, CV_64F);
 };
 
 class VisualServoingController: public QObject
@@ -61,6 +82,9 @@ public:
     void setCircleDxDyDr(int dx, int dy, int dr);
     void setStepCalibration(int step);
     void enableflagRecord(bool flag);
+    void recordPiont(Mat& PuvList, Mat& PxyzList);
+    void microscopicCalibration(const Calibration_Data& calibrationData, Microscopic_Parameter& microscopicParameter);
+
 
 signals:
     void systemStatusChanged(const QString& status);
@@ -84,15 +108,16 @@ private:
     double sharpness;
     Mat circle_center;
     bool flagRecord;
+    Calibration_Data calibrationData;
+    Microscopic_Parameter microscopicParameter;
     int stepCalibration; // 1:   找到焦平面
                                       // 2:   沿x移动采点
                                       // 3:   沿y移动采点
-                                      // 4:   Z轴向上方向移动
-                                      // 5:   沿xy移动采点
-                                      // 6:   Z轴向下方向移动
-                                      // 7:   xy移动采点
-                                      // 8:   回到焦平面后,  绕Z轴转动并采点
-                                      // 9:    计算参数
+                                      // 4:   Z轴向上移动后，再沿xy移动采点
+                                      // 5:   Z轴向下移动后，再沿xy移动采点
+                                      // 6:   回到焦平面
+                                      // 7:   绕Z轴转动并采点
+                                      // 8:    计算参数
     void executeControlCycle();
 };
 

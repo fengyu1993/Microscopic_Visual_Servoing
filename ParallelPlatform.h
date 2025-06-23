@@ -11,6 +11,11 @@
 
 #include "NarpodControl.h"
 
+#define ROBOT_VELOCITY                     0
+#define ROBOT_POSITION                       1
+#define ROBOT_STOP                                 2
+#define ROBOT_MOVE_TO_ZERO          3
+
 using namespace Eigen;
 
 class ParallelPlatform:  public QObject
@@ -55,6 +60,7 @@ public:
     Eigen::VectorXd getList(Eigen::Matrix4d T);
     bool setTargetVelocity(Eigen::VectorXd V);
     bool setTargetPose(Eigen::VectorXd P);
+    void setRobotMode(int mode);
 
 signals:
         void sig_updateRobotData(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose);
@@ -62,10 +68,6 @@ signals:
 private:
     void controller();
     void update();  // 上传x，y，z，rx，ry，rz的位置
-
-public:
-    int controlMode_; // 0: velocity; 1: position; 2: stop; 3: moveToZero
-    /// 辅助计算类函数
 
 private:
     unsigned int ntHandle_;
@@ -88,6 +90,7 @@ private:
     double dt_;
     QTimer *m_preciseTimer_;
     QElapsedTimer cycleTimer;
+    int controlMode_; // 0: velocity; 1: position; 2: stop; 3: moveToZero
 
 /// 任务步骤
     // STEP1 读取位姿函数完成并且调试完毕  ok！

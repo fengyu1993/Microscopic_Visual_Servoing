@@ -267,11 +267,11 @@ bool ParallelPlatform::checkPoseReachable(int x,int y,int z,int rx,int ry,int rz
 
 bool ParallelPlatform::getJointPositions(Eigen::VectorXd& positions)
 {
+    bool result = Narpod_GetPosition(ntHandle_,&positionx_,&positiony_,&positionz_,&rotationx_,&rotationy_,&rotationz_);
     positions = Eigen::VectorXd::Zero(6);
-    // positions = current_end_effector_pose_;
     positions(0) = positionx_;positions(1) = positiony_;positions(2) = positionz_;
     positions(3) = rotationx_;positions(4) = rotationy_;positions(5) = rotationz_;
-    return 1;
+    return result;
 }
 
 bool ParallelPlatform::getTaskPositions(Eigen::VectorXd& positions)
@@ -368,16 +368,22 @@ Eigen::VectorXd ParallelPlatform::getList(Eigen::Matrix4d T)
 
 bool ParallelPlatform::setTargetVelocity(Eigen::VectorXd V)
 {
+    setRobotMode(ROBOT_VELOCITY);
     this->targetVelocity_ = V;
     return true;
 }
 
 bool ParallelPlatform::setTargetPose(Eigen::VectorXd P)
 {
+    setRobotMode(ROBOT_POSITION);
     this->targetPose_ = P;
     return true;
 }
 
+void ParallelPlatform::setRobotMode(int mode)
+{
+    controlMode_ = mode;
+}
 bool  ParallelPlatform::moveVelocity(Eigen::VectorXd VelocityList_b, double dt)
 {
     // 单位：

@@ -158,11 +158,9 @@ private slots:
 
     void on_Calibration_Step_7_clicked(bool checked);
 
-    void on_Calibration_Step_8_clicked(bool checked);
-
-    void on_Calibration_Step_9_clicked(bool checked);
-
     void on_record_calibration_point_clicked();
+
+    void on_Calibration_Step_8_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;
