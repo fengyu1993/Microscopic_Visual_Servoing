@@ -162,6 +162,15 @@ private slots:
 
     void on_Calibration_Step_8_clicked(bool checked);
 
+
+    void on_CheckCircle_clicked();
+
+    void on_Clear_uvr_clicked();
+
+protected:
+    // 声明事件过滤器函数
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
     Ui::MainWindow *ui;
     VisualServoingController* m_visualServoingController = Q_NULLPTR;

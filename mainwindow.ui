@@ -702,8 +702,8 @@
      <rect>
       <x>10</x>
       <y>50</y>
-      <width>319</width>
-      <height>237</height>
+      <width>320</width>
+      <height>240</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -719,8 +719,8 @@ border-top-color: rgb(85, 255, 0);</string>
      <rect>
       <x>10</x>
       <y>300</y>
-      <width>319</width>
-      <height>237</height>
+      <width>320</width>
+      <height>240</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -735,7 +735,7 @@ border-width: 2px</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>540</y>
+      <y>550</y>
       <width>851</width>
       <height>241</height>
      </rect>
@@ -816,7 +816,7 @@ border-width: 2px</string>
      <rect>
       <x>890</x>
       <y>30</y>
-      <width>281</width>
+      <width>301</width>
       <height>241</height>
      </rect>
     </property>
@@ -837,8 +837,8 @@ border-width: 2px</string>
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>261</width>
-        <height>90</height>
+        <width>271</width>
+        <height>101</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -898,7 +898,25 @@ border-width: 2px</string>
            </item>
           </layout>
          </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_22">
+           <item>
+            <widget class="QPushButton" name="Clear_uvr">
+             <property name="text">
+              <string>Clear</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="CheckCircle">
+         <property name="text">
+          <string>CheckCircle</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="record_calibration_point">
@@ -914,7 +932,7 @@ border-width: 2px</string>
        <rect>
         <x>10</x>
         <y>110</y>
-        <width>261</width>
+        <width>271</width>
         <height>97</height>
        </rect>
       </property>

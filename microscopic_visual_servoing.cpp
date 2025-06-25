@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <ctime> 
+#include <ctime>
 #include <chrono>
 
 Microscopic_Visual_Servoing::Microscopic_Visual_Servoing(int resolution_x, int resolution_y)
@@ -56,7 +56,7 @@ Mat Microscopic_Visual_Servoing::skewSymmetric(const Mat& v) {
 // 计算物体速度
 Mat Microscopic_Visual_Servoing::get_object_velocity()
 {
-   this->iteration_num_++;
+    this->iteration_num_++;
     get_feature_error_interaction_matrix();
     // cout << "L_e(1:5, 1:6): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
     // cout << "error_s_(1:5): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 1)).clone() << endl;
@@ -73,14 +73,14 @@ bool Microscopic_Visual_Servoing::is_success()
     this->cost_function_value_ = cv::norm(this->error_s_, cv::NORM_L2SQR);
 
     if(this->cost_function_value_ < this->epsilon_)
-	{
-		cout << "Visual Servoing Success" << endl;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    {
+        cout << "Visual Servoing Success" << endl;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 // 设置期望灰度图像
@@ -105,14 +105,14 @@ void Microscopic_Visual_Servoing::set_image_gray_initial(const Mat& image_gray_i
 // 保存期望位姿
 void Microscopic_Visual_Servoing::set_pose_desired(Mat& pose_desired)
 {
-	pose_desired.copyTo(this->pose_desired_);
+    pose_desired.copyTo(this->pose_desired_);
 }
 
 
 // 保存图像数据
 void Microscopic_Visual_Servoing::save_pose_desired()
 {
-    this->pose_desired_.copyTo(this->data_vs_.pose_desired_);   
+    this->pose_desired_.copyTo(this->data_vs_.pose_desired_);
 }
 
 // 保存图像数据
@@ -148,7 +148,7 @@ void Microscopic_Visual_Servoing::save_all_data(Mat pose)
 {
     save_data_object_velocity();
     save_data_camera_pose(pose);
-    save_data_error_feature(); 
+    save_data_error_feature();
     save_data_vs_time();
     save_data_other_parameter();
 }
@@ -156,16 +156,16 @@ void Microscopic_Visual_Servoing::save_all_data(Mat pose)
 // 记录时间
 void Microscopic_Visual_Servoing::save_data_vs_time()
 {
-	
-	if (this->iteration_num_ == 1)
-	{
-		this->start_VS_time_ = clock();
-		this->data_vs_.time_vs_.push_back(0.0);
-	}
-	else
-	{
-		this->data_vs_.time_vs_.push_back((double)(clock() - this->start_VS_time_) / CLOCKS_PER_SEC);
-	}
+
+    if (this->iteration_num_ == 1)
+    {
+        this->start_VS_time_ = clock();
+        this->data_vs_.time_vs_.push_back(0.0);
+    }
+    else
+    {
+        this->data_vs_.time_vs_.push_back((double)(clock() - this->start_VS_time_) / CLOCKS_PER_SEC);
+    }
 }
 
 
@@ -182,7 +182,7 @@ void Microscopic_Visual_Servoing::write_data()
     imwrite(saveImage_initial, this->data_vs_.image_gray_init_*255);
     // 保存数据
     ofstream oFile;
-	string excel_name = location + file_name + "_data.xls";
+    string excel_name = location + file_name + "_data.xls";
     oFile.open(excel_name, ios::out|ios::trunc);
     write_visual_servoing_data(oFile);
     write_other_data(oFile);
@@ -198,11 +198,11 @@ void Microscopic_Visual_Servoing::write_visual_servoing_data(ofstream& oFile)
     oFile << "camera pose" << endl;
     write_to_excel(this->data_vs_.pose_, oFile);
     oFile << "camera desired pose" << endl;
-    write_to_excel(this->data_vs_.pose_desired_, oFile);   
+    write_to_excel(this->data_vs_.pose_desired_, oFile);
     oFile << "error feature" << endl;
     write_to_excel(this->data_vs_.error_feature_, oFile);
     oFile << "visual servoing time" << endl;
-    write_to_excel(this->data_vs_.time_vs_, oFile);	
+    write_to_excel(this->data_vs_.time_vs_, oFile);
 }
 
 void Microscopic_Visual_Servoing::write_other_data(ofstream& oFile)
@@ -225,103 +225,102 @@ string Microscopic_Visual_Servoing::get_method_name()
 // 获取当前计算机时间
 string Microscopic_Visual_Servoing::get_date_time()
 {
-	auto to_string = [](const std::chrono::system_clock::time_point& t)->std::string
-	{
-		auto as_time_t = std::chrono::system_clock::to_time_t(t);
-		struct tm tm;
+    auto to_string = [](const std::chrono::system_clock::time_point& t)->std::string
+    {
+        auto as_time_t = std::chrono::system_clock::to_time_t(t);
+        struct tm tm;
 #if defined(WIN32) || defined(_WINDLL)
-		localtime_s(&tm, &as_time_t);  //win api，线程安全，而std::localtime线程不安全
+        localtime_s(&tm, &as_time_t);  //win api，线程安全，而std::localtime线程不安全
 #else
-		localtime_r(&as_time_t, &tm);//linux api，线程安全
+        localtime_r(&as_time_t, &tm);//linux api，线程安全
 #endif
 
-		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(t.time_since_epoch());
-		char buf[128];
-		snprintf(buf, sizeof(buf), "%04d_%02d_%02d_%02d_%02d_%02d",
-			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-		return buf;
-	};
+        std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(t.time_since_epoch());
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%04d_%02d_%02d_%02d_%02d_%02d",
+                 tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        return buf;
+    };
 
-	std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
-	return to_string(t);
+    std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
+    return to_string(t);
 }
 
 void Microscopic_Visual_Servoing::write_to_excel(Mat data, ofstream& oFile)
 {
-		int channels = data.channels();            //获取图像channel  
-		int nrows = data.rows;                     //矩阵的行数  
-		int ncols = data.cols*channels;            //矩阵的总列数=列数*channel分量数  
- 
-		//循环用变量
-		int i = 0;
-		int j = 0;
- 
-		if (data.depth() == CV_8U)//uchar
-		{
-			for (i = 0; i<nrows; i++)
-			{
-				for (j = 0; j<ncols; j++)
-				{
-					int tmpVal = (int)data.ptr<uchar>(i)[j];
-					oFile << tmpVal << '\t';
-				}
-				oFile << endl;
-			}
-		}
-		else if (data.depth() == CV_16S)//short
-		{
-			for (i = 0; i<nrows; i++)
-			{
-				for (j = 0; j<ncols; j++)
-				{
-					oFile << (short)data.ptr<short>(i)[j] << '\t';
-				}
-				oFile << endl;
-			}
-		}
-		else if (data.depth() == CV_16U)//unsigned short
-		{
-			for (i = 0; i<nrows; i++)
-			{
-				for (j = 0; j<ncols; j++)
-				{
-					oFile << (unsigned short)data.ptr<unsigned short>(i)[j] << '\t';
-				}
-				oFile << endl;
-			}
-		}
-		else if (data.depth() == CV_32S)//int 
-		{
-			for (i = 0; i<nrows; i++)
-			{
-				for (j = 0; j<ncols; j++)
-				{
-					oFile << (int)data.ptr<int>(i)[j] << '\t';
-				}
-				oFile << endl;
-			}
-		}
-		else if (data.depth() == CV_32F)//float
-		{
-			for (i = 0; i<nrows; i++)
-			{
-				for (j = 0; j<ncols; j++)
-				{
-					oFile << (float)data.ptr<float>(i)[j] << '\t';
-				}
-				oFile << endl;
-			}
-		}
-		else//CV_64F double
-		{
-			for (i = 0; i < nrows; i++)
-			{
-				for (j = 0; j < ncols; j++)
-				{
-					oFile << (double)data.ptr<double>(i)[j] << '\t';
-				}
-				oFile << endl;
-			}
-		}
-}
+    int channels = data.channels();            //获取图像channel
+    int nrows = data.rows;                     //矩阵的行数
+    int ncols = data.cols*channels;            //矩阵的总列数=列数*channel分量数
 
+    //循环用变量
+    int i = 0;
+    int j = 0;
+
+    if (data.depth() == CV_8U)//uchar
+    {
+        for (i = 0; i<nrows; i++)
+        {
+            for (j = 0; j<ncols; j++)
+            {
+                int tmpVal = (int)data.ptr<uchar>(i)[j];
+                oFile << tmpVal << '\t';
+            }
+            oFile << endl;
+        }
+    }
+    else if (data.depth() == CV_16S)//short
+    {
+        for (i = 0; i<nrows; i++)
+        {
+            for (j = 0; j<ncols; j++)
+            {
+                oFile << (short)data.ptr<short>(i)[j] << '\t';
+            }
+            oFile << endl;
+        }
+    }
+    else if (data.depth() == CV_16U)//unsigned short
+    {
+        for (i = 0; i<nrows; i++)
+        {
+            for (j = 0; j<ncols; j++)
+            {
+                oFile << (unsigned short)data.ptr<unsigned short>(i)[j] << '\t';
+            }
+            oFile << endl;
+        }
+    }
+    else if (data.depth() == CV_32S)//int
+    {
+        for (i = 0; i<nrows; i++)
+        {
+            for (j = 0; j<ncols; j++)
+            {
+                oFile << (int)data.ptr<int>(i)[j] << '\t';
+            }
+            oFile << endl;
+        }
+    }
+    else if (data.depth() == CV_32F)//float
+    {
+        for (i = 0; i<nrows; i++)
+        {
+            for (j = 0; j<ncols; j++)
+            {
+                oFile << (float)data.ptr<float>(i)[j] << '\t';
+            }
+            oFile << endl;
+        }
+    }
+    else//CV_64F double
+    {
+        for (i = 0; i < nrows; i++)
+        {
+            for (j = 0; j < ncols; j++)
+            {
+                oFile << (double)data.ptr<double>(i)[j] << '\t';
+            }
+            oFile << endl;
+        }
+    }
+}

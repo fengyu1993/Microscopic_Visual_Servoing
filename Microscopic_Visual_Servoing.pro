@@ -18,7 +18,8 @@ SOURCES += \
     modern_robotic_lib.cpp\
     microscopic_visual_servoing.cpp\
     direct_microscopic_visual_servoing.cpp\
-    defocus_microscopic_visual_servoing.cpp
+    defocus_microscopic_visual_servoing.cpp\
+    MicroscopeCalibration.cpp
 
 HEADERS += \
     VisualServoingController.h \
@@ -28,7 +29,9 @@ HEADERS += \
     modern_robotic_lib.h\
     microscopic_visual_servoing.h\
     direct_microscopic_visual_servoing.h\
-    defocus_microscopic_visual_servoing.h
+    defocus_microscopic_visual_servoing.h\
+    MicroscopeCalibration.h
+
 
 FORMS += \
     mainwindow.ui

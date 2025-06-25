@@ -2,6 +2,7 @@
 
 VisualServoingController::VisualServoingController()
 {
+
     if(read_vs_parameter("E:/QT/Microscopic_Visual_Servoing/resources/data/VS_Parameter.csv")){
         output_vs_parameter();
     }
@@ -24,6 +25,8 @@ VisualServoingController::VisualServoingController()
     m_algorithm_DMVS = new Direct_Microscopic_Visual_Servoing(vs_parameter.resolution_x, vs_parameter.resolution_y);
     m_algorithm_DMVS->init_VS(vs_parameter.lambda, vs_parameter.epsilon, image_desired, vs_parameter.camera_parameters, vs_parameter.pose_desired, vs_parameter.Tbc);
 
+    this->m_microscope_calibration = new MicroscopeCalibration(vs_parameter.resolution_x, vs_parameter.resolution_y);
+
     m_controlTimer = new QTimer();
     m_controlTimer->setInterval(1.0 / vs_parameter.control_rate *1000);
     m_controlTimer->setTimerType(Qt::PreciseTimer);
@@ -34,10 +37,60 @@ VisualServoingController::VisualServoingController()
     circle_du = 0;
     circle_dv = 0;
     circle_dr = 0;
-    circle_center = cv::Mat::zeros(2, 1, CV_64FC1);
+    midifyCircle = cv::Mat::zeros(3, 1, CV_64FC1);
     flagRecord = false;
+    flagCheckCircle = true;
+
+    bestCircle <<  vs_parameter.resolution_x/2,  vs_parameter.resolution_y/2, vs_parameter.resolution_y / 10.0;
 
     connect(m_controlTimer, &QTimer::timeout, this, &VisualServoingController::executeControlCycle);
+
+
+    // m_microscope_calibration->calibrationData.pointsPuvMoveXD0
+    //     = (cv::Mat_<double>(2, 3) << 110, 395, 510, 360, 175, 100);
+    // m_microscope_calibration->calibrationData.pointsPXYZMoveXD0
+    //     = (cv::Mat_<double>(3, 3) << 0, 240000, 325000, 0, 0, 0, 0, 0, 0);
+    // m_microscope_calibration->calibrationData.pointsPuvMoveYD0
+    //     = (cv::Mat_<double>(2, 5) << 510, 600, 730, 855, 890, 100, 270, 475, 680, 710);
+    // m_microscope_calibration->calibrationData.pointsPXYZMoveYD0
+    //     = (cv::Mat_<double>(3, 5) << 325000, 325000, 325000, 325000, 325000,
+    //                                                      -5000, -130000, -285000, -455000, -500000, 0, 0, 0, 0, 0);
+    // m_microscope_calibration->calibrationData.pointsPuvMoveXYDn
+    //     = (cv::Mat_<double>(2, 5) << 865, 965, 965, 690, 500, 740, 575, 370, 385, 520);
+    // m_microscope_calibration->calibrationData.pointsPXYZMoveXYDn
+    //     = (cv::Mat_<double>(3, 5) << 325000, 430000, 505000, 345000, 175000,
+    //                                      -500000, -450000, -325000, -235000, -235000,
+    //                                      230000, 230000, 230000, 230000, 230000);
+    // m_microscope_calibration->calibrationData.pointsPuvMoveXYDp
+    //     = (cv::Mat_<double>(2, 4) << 435, 560, 705, 1030, 570, 665, 820, 750);
+    // m_microscope_calibration->calibrationData.pointsPXYZMoveXYDp
+    //     = (cv::Mat_<double>(3, 4) << 175000, 195000, 215000, 405000,
+    //                                      -235000, -325000, -470000, -550000,
+    //                                      -320000, -320000, -320000, -320000);
+    // m_microscope_calibration->calibrationData.pointsPuvRotateZD0
+    //     = (cv::Mat_<double>(2, 4) << 95, 13, 220, 265, 420, 625, 980, 1050);
+    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
+    //     (cv::Mat_<double>(4, 4) << 0.999754, 0.0221639, 0, 0,
+    //                                                  -0.0221639, 0.999754, 0, 0,
+    //                                                     0, 0, 1, 0,  0, 0, 0, 1));
+    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
+    //     (cv::Mat_<double>(4, 4) << 0.999016, 0.044349, 0, 0,
+    //                                                    -0.044349, 0.999016, 0, 0,
+    //                                                     0, 0, 1, 0,  0, 0, 0, 1));
+    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
+    //     (cv::Mat_<double>(4, 4) << 0.996066, 0.088610, 0, 0,
+    //                                                     -0.088610, 0.996066, 0, 0,
+    //                                                     0, 0, 1, 0,  0, 0, 0, 1));
+    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
+    //     (cv::Mat_<double>(4, 4) << 0.984297, 0.176522, 0, 0,
+    //                                                     -0.176522, 0.984297, 0, 0,
+    //                                                     0, 0, 1, 0,  0, 0, 0, 1));
+    // qDebug() << "Calibrarion start";
+    // m_microscope_calibration->calibration(m_microscope_calibration->calibrationData, m_microscope_calibration->microscopicParameter);
+    // qDebug() << "Calibrarion finish";
+    // m_microscope_calibration->writeCalibrationData(m_microscope_calibration->calibrationData);
+
+
 }
 VisualServoingController::~VisualServoingController()
 {
@@ -50,6 +103,7 @@ VisualServoingController::~VisualServoingController()
     delete  this->m_robot;
     delete this->m_algorithm_DMVS;
     delete this->m_controlTimer;
+    delete this->m_microscope_calibration;
 }
 
 void VisualServoingController::executeControlCycle()
@@ -169,149 +223,121 @@ void VisualServoingController::calibrationControl()
         Mat T = m_robot->getTaskMat_cv();
         // 获取图像
         Mat image  = m_camera->getLatestFrame();
-        // Mat image  = this->m_algorithm_DMVS->image_gray_desired_.clone();
-        // 中值模糊减少噪声
+        // Mat image = imread("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png");
+        // 检测圆
         Mat src_8u;
         image.convertTo(src_8u, CV_8U, 255.0);
-        medianBlur(src_8u, src_8u, 5);
-        // 检测所有可能的圆
-        vector<Vec3f> circles;
-        // HoughCircles(src_8u, circles, HOUGH_GRADIENT, 1,
-        //              src_8u.rows/8,   // 增大最小距离以减少检测数量
-        //              200, 30,      // 提高阈值以获取更可靠的圆
-        //              30, 200);
-
-        HoughCircles(src_8u, circles, HOUGH_GRADIENT, 1,
-                     src_8u.rows/16,  // 两个圆之间的最小距离
-                     100, 30,       // 参数1和参数2
-                     30, 100        // 最小和最大半径
-                     );
-        // 选择最可靠的圆（基于累加器值）
-        Vec3f bestCircle;
-        if (!circles.empty())
-        {
-            // 按置信度排序（假设最后一个参数是置信度，实际需要根据OpenCV版本调整）
-            sort(circles.begin(), circles.end(),
-                 [](const Vec3f& a, const Vec3f& b) {
-                     return a[2] > b[2]; // 按半径排序，或使用其他标准
-                 });
-            // 取第一个（最可靠的）圆
-            bestCircle = circles[0];
+        if(flagCheckCircle){
+            this->bestCircle = checkBestCircle(src_8u);
+            disableCheckCircle();
         }
-         else{
-                bestCircle[0] = vs_parameter.resolution_x;
-                bestCircle[1] = vs_parameter.resolution_y;
-                bestCircle[2] = vs_parameter.resolution_y / 40.0;
-                qDebug() << "图像未检测出圆形，请调整HoughCircles函数的参数";
-        }
+        // 修正圆
+        midifyCircle.at<double>(0, 0) = bestCircle[0] + circle_du;
+        midifyCircle.at<double>(1, 0) = bestCircle[1] + circle_dv;
+        midifyCircle.at<double>(2, 0) = bestCircle[2] + circle_dr;
+        // qDebug() << "center_x: " << midifyCircle.at<double>(0, 0);
+        // qDebug() << "center_y: " << midifyCircle.at<double>(1, 0);
+        // qDebug() << "center_r: " << midifyCircle.at<double>(2, 0);
         // 显式标注后的图像
-        Point center(cvRound(bestCircle[0])  + circle_du, cvRound(bestCircle[1]) + circle_dv);
-        int radius = cvRound(bestCircle[2]) + circle_dr;
-        // 创建纯红色图像
-        Mat redMask = Mat::zeros(src_8u.size(), CV_8UC3);
-        circle(redMask, center, radius, Scalar(0, 0, 255), 2);
-        circle(redMask, center, 3, Scalar(0, 0, 255), -1);
-        // 将灰度图转为三通道
-        Mat threeChannelGray;
-        cvtColor(src_8u, threeChannelGray, COLOR_GRAY2BGR);
-        // 合并红色标记覆盖到灰度图上
-        addWeighted(threeChannelGray, 1.0, redMask, 1.0, 0.0, threeChannelGray);
-        //     // 输出显示
-        QImage img =  this->m_camera->cvMatToQImage(threeChannelGray);
+        Point center(cvRound(midifyCircle.at<double>(0, 0)), cvRound(midifyCircle.at<double>(1, 0)));
+        int radius = cvRound(midifyCircle.at<double>(2, 0) );
+        cv::cvtColor(src_8u, src_8u, cv::COLOR_GRAY2BGR);
+        circle(src_8u, center, radius, Scalar(0, 255, 0), 3);
+        circle(src_8u, center, 2, Scalar(0, 0, 255), 3);
+        // 输出显示
+        QImage img =  this->m_camera->cvMatToQImage(src_8u);
         emit sigCalibrationImage(img);
-        circle_center.at<double>(0, 0) = bestCircle[0] + circle_du;
-        circle_center.at<double>(1, 0) = bestCircle[1] + circle_dv;
-        // qDebug() << "center_x: " << circle_center.at<double>(0, 0);
-        // qDebug() << "center_y: " << circle_center.at<double>(1, 0);
-        // qDebug() << "center_r: " << cvRound(bestCircle[2]) + circle_dr;
         // 标定
         bool flagFinish = false;
         switch (this->stepCalibration)
         {
         case 1:
-            qDebug() << "stepCalibration_1：找到焦平面";
+            // qDebug() << "stepCalibration_1：找到焦平面";
             sharpnessControl();
             if(this->flagRecord)
             {
-                m_robot->getTaskPositions(calibrationData.robotFocusPose);
+                m_robot->getTaskPositions(robotPoses.focusPose);
                 enableflagRecord(false);
                 std::stringstream ss;
-                ss << calibrationData.robotFocusPose;
+                ss << robotPoses.focusPose;
                 qDebug() << "robotFocusPose:\n" << ss.str().c_str();
             }
             break;
         case 2:
-            qDebug() << "stepCalibration_2：沿x移动采点";
+            // qDebug() << "stepCalibration_2：沿x移动采点";
             if(this->flagRecord)
             {
-                recordPiont(calibrationData.pointsPuvMoveXD0, calibrationData.pointsPXYZMoveXD0);
+                recordPiont(m_microscope_calibration->calibrationData.pointsPuvMoveXD0, m_microscope_calibration->calibrationData.pointsPXYZMoveXD0);
                 enableflagRecord(false);
                 std::stringstream ss1, ss2;
-                ss1 << calibrationData.pointsPuvMoveXD0;
-                ss2 << calibrationData.pointsPXYZMoveXD0;
+                ss1 << m_microscope_calibration->calibrationData.pointsPuvMoveXD0;
+                ss2 << m_microscope_calibration->calibrationData.pointsPXYZMoveXD0;
                 qDebug() << "pointsPuvMoveXD0:\n" << ss1.str().c_str();
                 qDebug() << "pointsPXYZMoveXD0:\n" << ss2.str().c_str();
             }
             break;
         case 3:
-            qDebug() << "stepCalibration_3：沿y移动采点";
+            // qDebug() << "stepCalibration_3：沿y移动采点";
             if(this->flagRecord)
             {
-                recordPiont(calibrationData.pointsPuvMoveYD0, calibrationData.pointsPXYZMoveYD0);
+                recordPiont(m_microscope_calibration->calibrationData.pointsPuvMoveYD0, m_microscope_calibration->calibrationData.pointsPXYZMoveYD0);
                 enableflagRecord(false);
                 std::stringstream ss1, ss2;
-                ss1 << calibrationData.pointsPuvMoveYD0;
-                ss2 << calibrationData.pointsPXYZMoveYD0;
+                ss1 << m_microscope_calibration->calibrationData.pointsPuvMoveYD0;
+                ss2 << m_microscope_calibration->calibrationData.pointsPXYZMoveYD0;
                 qDebug() << "pointsPuvMoveYD0:\n" << ss1.str().c_str();
                 qDebug() << "pointsPXYZMoveYD0:\n" << ss2.str().c_str();
             }
             break;
         case 4:
-            qDebug() << "stepCalibration_4：Z轴向上移动后，再沿xy移动采点";
+            // qDebug() << "stepCalibration_4：Z轴向上移动后，再沿xy移动采点";
             if(this->flagRecord)
             {
-                recordPiont(calibrationData.pointsPuvMoveXYDn, calibrationData.pointsPXYZMoveXYDn);
+                recordPiont(m_microscope_calibration->calibrationData.pointsPuvMoveXYDn, m_microscope_calibration->calibrationData.pointsPXYZMoveXYDn);
                 enableflagRecord(false);
                 std::stringstream ss1, ss2;
-                ss1 << calibrationData.pointsPuvMoveXYDn;
-                ss2 << calibrationData.pointsPXYZMoveXYDn;
+                ss1 << m_microscope_calibration->calibrationData.pointsPuvMoveXYDn;
+                ss2 << m_microscope_calibration->calibrationData.pointsPXYZMoveXYDn;
                 qDebug() << "pointsPuvMoveXYDn:\n" << ss1.str().c_str();
                 qDebug() << "pointsPXYZMoveXYDn:\n" << ss2.str().c_str();
             }
             break;
         case 5:
-            qDebug() << "stepCalibration_5：Z轴向下移动后，再沿xy移动采点";
+            // qDebug() << "stepCalibration_5：Z轴向下移动后，再沿xy移动采点";
             if(this->flagRecord)
             {
-                recordPiont(calibrationData.pointsPuvMoveXYDp, calibrationData.pointsPXYZMoveXYDp);
+                recordPiont(m_microscope_calibration->calibrationData.pointsPuvMoveXYDp, m_microscope_calibration->calibrationData.pointsPXYZMoveXYDp);
                 enableflagRecord(false);
                 std::stringstream ss1, ss2;
-                ss1 << calibrationData.pointsPuvMoveXYDp;
-                ss2 << calibrationData.pointsPXYZMoveXYDp;
+                ss1 << m_microscope_calibration->calibrationData.pointsPuvMoveXYDp;
+                ss2 << m_microscope_calibration->calibrationData.pointsPXYZMoveXYDp;
                 qDebug() << "pointsPuvMoveXYDp:\n" << ss1.str().c_str();
                 qDebug() << "pointsPXYZMoveXYDp:\n" << ss2.str().c_str();
             }
             break;
         case 6:
-            qDebug() << "stepCalibration_6：回到焦平面";
-            m_robot->setTargetPose(calibrationData.robotFocusPose);
+            // qDebug() << "stepCalibration_6：回到焦平面";
+            m_robot->setTargetPose(robotPoses.focusPose);
             break;
         case 7:
-            qDebug() << "stepCalibration_7：绕Z轴转动并采点";
+            // qDebug() << "stepCalibration_7：绕Z轴转动并采点";
             if(this->flagRecord)
             {
-                recordPiont(calibrationData.pointsPuvRotateZD0, calibrationData.pointsPXYZRotateZD0);
-                calibrationData.posesTsRotateZD0.push_back(m_robot->getTaskMat_cv());
+                recordPiont(m_microscope_calibration->calibrationData.pointsPuvRotateZD0, m_microscope_calibration->calibrationData.pointsPXYZRotateZD0);
+                Mat T = m_robot->getTaskMat_cv();
+                m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(T.clone());
                 enableflagRecord(false);
-                std::stringstream ss1, ss2;
-                ss1 << calibrationData.pointsPuvRotateZD0;
-                ss2 << calibrationData.pointsPXYZRotateZD0;
-                qDebug() << "pointsPuvRotateZD0:\n" << ss1.str().c_str();
-                qDebug() << "pointsPXYZRotateZD0:\n" << ss2.str().c_str();
+                // std::stringstream ss1, ss2, ss3;
+                // ss1 << m_microscope_calibration->calibrationData.pointsPuvRotateZD0;
+                // ss2 << m_microscope_calibration->calibrationData.pointsPXYZRotateZD0;
+                // ss3 << m_microscope_calibration->calibrationData.posesTsRotateZD0.back();
+                // qDebug() << "pointsPuvRotateZD0:\n" << ss1.str().c_str();
+                // qDebug() << "pointsPXYZRotateZD0:\n" << ss2.str().c_str();
+                // qDebug() << "posesTsRotateZD:\n" << ss3.str().c_str();
             }
             break;
         case 8:
-            qDebug() << "stepCalibration_8：计算参数";
+            // qDebug() << "stepCalibration_8：计算参数";
             flagFinish = true;
             break;
         default:
@@ -320,110 +346,56 @@ void VisualServoingController::calibrationControl()
         // 标定参数计算
         if(flagFinish)
         {
-            microscopicCalibration(calibrationData, this->microscopicParameter);
+            m_microscope_calibration->writeCalibrationData(m_microscope_calibration->calibrationData);
+            m_microscope_calibration->calibration(m_microscope_calibration->calibrationData, m_microscope_calibration->microscopicParameter);
             flagFinish = false;
+            setStepCalibration(0);
         }
-
+        // 输出数据
 
     }
 }
 
-void VisualServoingController::microscopicCalibration(const Calibration_Data& calibrationData, Microscopic_Parameter& microscopicParameter)
+Vec3f VisualServoingController::checkBestCircle(Mat img)
 {
-    microscopicParameter.c_u = vs_parameter.resolution_x / 2.0;
-    microscopicParameter.c_v = vs_parameter.resolution_y / 2.0;
-    // 构建delta_Puv和delta_Pxy
-    Mat pointsPuvMoveXYD0; Mat pointsPXYZMoveXYD0;
-    vconcat(calibrationData.pointsPuvMoveXD0, calibrationData.pointsPuvMoveYD0, pointsPuvMoveXYD0);
-    vconcat(calibrationData.pointsPXYZMoveXD0, calibrationData.pointsPXYZMoveYD0, pointsPXYZMoveXYD0);
-    Mat col1_repeated;
-    repeat(pointsPuvMoveXYD0.col(0), 1, pointsPuvMoveXYD0.cols-1, col1_repeated);
-    Mat delta_Puv_D0 = pointsPuvMoveXYD0.colRange(1, pointsPuvMoveXYD0.cols) - col1_repeated;
-    repeat(pointsPXYZMoveXYD0.col(0), 1, pointsPXYZMoveXYD0.cols-1, col1_repeated);
-    Mat delta_Pxy_D0 = pointsPXYZMoveXYD0.colRange(1, pointsPXYZMoveXYD0.cols) - col1_repeated;
-    repeat(calibrationData.pointsPuvMoveXYDn.col(0), 1, calibrationData.pointsPuvMoveXYDn.cols-1, col1_repeated);
-    Mat delta_Puv_Dn = calibrationData.pointsPuvMoveXYDn.colRange(1, calibrationData.pointsPuvMoveXYDn.cols) - col1_repeated;
-    repeat(calibrationData.pointsPXYZMoveXYDn.col(0), 1, calibrationData.pointsPXYZMoveXYDn.cols-1, col1_repeated);
-    Mat delta_Pxy_Dn = calibrationData.pointsPXYZMoveXYDn.colRange(1, calibrationData.pointsPXYZMoveXYDn.cols) - col1_repeated;
-    repeat(calibrationData.pointsPuvMoveXYDp.col(0), 1, calibrationData.pointsPuvMoveXYDp.cols-1, col1_repeated);
-    Mat delta_Puv_Dp = calibrationData.pointsPuvMoveXYDp.colRange(1, calibrationData.pointsPuvMoveXYDp.cols) - col1_repeated;
-    repeat(calibrationData.pointsPXYZMoveXYDp.col(0), 1, calibrationData.pointsPXYZMoveXYDp.cols-1, col1_repeated);
-    Mat delta_Pxy_Dp = calibrationData.pointsPXYZMoveXYDp.colRange(1, calibrationData.pointsPXYZMoveXYDp.cols) - col1_repeated;
-    // 计算Z_f和D_f_k_uv
-    double d0 = 0;
-    double dp = mean(calibrationData.pointsPXYZMoveXD0.row(2))[0] - mean(calibrationData.pointsPXYZMoveXYDp.row(2))[0];
-    double dn = mean(calibrationData.pointsPXYZMoveXD0.row(2))[0] - mean(calibrationData.pointsPXYZMoveXYDn.row(2))[0];
-    Mat Li_D0, li_D0, A_D0, b_D0, Li_Dp, li_Dp, A_Dp, b_Dp, Li_Dn, li_Dn, A_Dn, b_Dn;
-    cv::magnitude(delta_Puv_D0.row(0), delta_Puv_D0.row(1), li_D0);
-    cv::magnitude(delta_Pxy_D0.row(0), delta_Pxy_D0.row(1), Li_D0);
-    hconcat(Li_D0, -li_D0, A_D0);
-    b_D0 = li_D0 * d0;
-    cv::magnitude(delta_Puv_Dp.row(0), delta_Puv_Dp.row(1), li_Dp);
-    cv::magnitude(delta_Pxy_Dp.row(0), delta_Pxy_Dp.row(1), Li_Dp);
-    hconcat(Li_Dp, -li_Dp, A_Dp);
-    b_Dp = li_Dp * dp;
-    cv::magnitude(delta_Puv_Dn.row(0), delta_Puv_Dn.row(1), li_Dn);
-    cv::magnitude(delta_Pxy_Dn.row(0), delta_Pxy_Dn.row(1), Li_Dn);
-    hconcat(Li_Dn, -li_Dn, A_Dn);
-    b_Dn = li_Dn * dn;
-    Mat A, b;
-    vconcat(std::vector<cv::Mat>{A_D0, A_Dp, A_Dn}, A);
-    vconcat(std::vector<cv::Mat>{b_D0, b_Dp, b_Dn}, b);
-    Mat X_Df_Zf = (A.t() * A).inv() * A.t() * b;
-    microscopicParameter.D_f_k_uv = X_Df_Zf.at<double>(0,0);
-    microscopicParameter.Z_f = X_Df_Zf.at<double>(1,0);
-    // 计算rx
-    repeat(calibrationData.pointsPuvMoveXD0.col(0), 1, calibrationData.pointsPuvMoveXD0.cols-1, col1_repeated);
-    Mat delta_Puv_MoveXD0 = calibrationData.pointsPuvMoveXD0.colRange(1, calibrationData.pointsPuvMoveXD0.cols) - col1_repeated;
-    for(int i = 0; i < delta_Puv_MoveXD0.cols; i++)
+    medianBlur(img, img, 5);
+    Mat fixed_thresh;
+    cv::threshold(img, fixed_thresh, 25, 255, THRESH_BINARY);
+    vector<Vec3f> circles;
+    HoughCircles(fixed_thresh, circles, HOUGH_GRADIENT, 1,
+                 1000,  // 两个圆之间的最小距离
+                 10, 10, 20, 200 // 参数可以根据需要调整
+                 );
+
+    // 选择最可靠的圆（基于累加器值）
+    Vec3f bestCircle;
+    if (!circles.empty())
     {
-        cv::normalize(delta_Puv_MoveXD0.col(i), delta_Puv_MoveXD0.col(i), 1.0, 0.0, cv::NORM_L2);
+        // 按置信度排序（假设最后一个参数是置信度，实际需要根据OpenCV版本调整）
+        sort(circles.begin(), circles.end(),
+             [](const Vec3f& a, const Vec3f& b) {
+                 return a[2] > b[2]; // 按半径排序，或使用其他标准
+             });
+        // 取第一个（最可靠的）圆
+        bestCircle = circles[0];
     }
-    Mat rx = Mat::zeros(3, 1, CV_64F);
-    rx.at<double>(0, 0) = mean(delta_Puv_MoveXD0.row(0))[0];
-    rx.at<double>(1, 0) = mean(delta_Puv_MoveXD0.row(1))[0];
-    // 计算ry
-    repeat(calibrationData.pointsPuvMoveYD0.col(0), 1, calibrationData.pointsPuvMoveYD0.cols-1, col1_repeated);
-    Mat delta_Puv_MoveYD0 = calibrationData.pointsPuvMoveYD0.colRange(1, calibrationData.pointsPuvMoveYD0.cols) - col1_repeated;
-    for(int i = 0; i < delta_Puv_MoveYD0.cols; i++)
-    {
-        cv::normalize(delta_Puv_MoveYD0.col(i), delta_Puv_MoveYD0.col(i), 1.0, 0.0, cv::NORM_L2);
+    else{
+        bestCircle[0] = vs_parameter.resolution_x/2;
+        bestCircle[1] = vs_parameter.resolution_y/2;
+        bestCircle[2] = vs_parameter.resolution_y / 10.0;
+        // qDebug() << "图像未检测出圆形，请调整HoughCircles函数的参数";
     }
-    Mat ry = Mat::zeros(3, 1, CV_64F);
-    ry.at<double>(0, 0) = mean(delta_Puv_MoveYD0.row(0))[0];
-    ry.at<double>(1, 0) = mean(delta_Puv_MoveYD0.row(1))[0];
-    // 计算R_cb
-    Mat R_cb;
-    hconcat(std::vector<cv::Mat>{rx, ry, rx.cross(ry)}, R_cb);
-    // 计算t_cb
-    Mat A_t_cb = Mat::zeros(0, 3, CV_64F);
-    Mat b_t_cb = Mat::zeros(0, 1, CV_64F);
-    Mat R_be0 = calibrationData.posesTsRotateZD0[0].rowRange(0, 3).colRange(0,3);
-    Mat t_be0 = calibrationData.posesTsRotateZD0[0].rowRange(0, 3).col(3);
-    Mat p_c0 = (cv::Mat_<double>(3, 1) <<
-                     (calibrationData.pointsPuvRotateZD0.at<double>(0, 0) - microscopicParameter.c_u) * microscopicParameter.Z_f / microscopicParameter.D_f_k_uv,
-                     (calibrationData.pointsPuvRotateZD0.at<double>(1, 0) - microscopicParameter.c_v) * microscopicParameter.Z_f / microscopicParameter.D_f_k_uv,
-                     microscopicParameter.Z_f);
-    for(int j = 1; j < calibrationData.posesTsRotateZD0.size(); j++)
-    {
-        Mat R_ej = calibrationData.posesTsRotateZD0[j].rowRange(0, 3).colRange(0,3);
-        Mat t_ej = calibrationData.posesTsRotateZD0[j].rowRange(0, 3).col(3);
-        Mat p_cj = (cv::Mat_<double>(3, 1) <<
-                     (calibrationData.pointsPuvRotateZD0.at<double>(0, j) - microscopicParameter.c_u) * microscopicParameter.Z_f / microscopicParameter.D_f_k_uv,
-                     (calibrationData.pointsPuvRotateZD0.at<double>(1, j) - microscopicParameter.c_v) * microscopicParameter.Z_f / microscopicParameter.D_f_k_uv,
-                     microscopicParameter.Z_f);
-        Mat temp_A = (R_be0.t() - R_ej.t()) * R_cb.t();
-        Mat temp_b = (R_be0.t()  * (R_cb.t() * p_c0 - t_be0) - R_ej.t() * (R_cb.t() * p_cj - t_ej));
-        vconcat(A_t_cb, temp_A, A_t_cb);
-        vconcat(b_t_cb, temp_b, b_t_cb);
-    }
-    Mat A_t_cb_pinv;
-    invert(A_t_cb, A_t_cb_pinv, DECOMP_SVD);
-    Mat t_cb = A_t_cb_pinv * b_t_cb;
-    t_cb.at<double>(2, 0) = microscopicParameter.Z_f;
-    // 计算Tbc
-    microscopicParameter.Tbc.rowRange(0,3).colRange(0,3) = R_cb.t();
-    microscopicParameter.Tbc.rowRange(0,3).col(3) = -R_cb.t() * t_cb;
+    return bestCircle;
+}
+
+void VisualServoingController::enableCheckCircle()
+{
+    this->flagCheckCircle = true;
+}
+
+void VisualServoingController::disableCheckCircle()
+{
+    this->flagCheckCircle = false;
 }
 
 
@@ -431,7 +403,7 @@ void VisualServoingController::recordPiont(Mat& PuvList, Mat& PxyzList)
 {
     Eigen::VectorXd positions;
     m_robot->getTaskPositions(positions);
-    Mat Puv = (cv::Mat_<double>(2, 1) << circle_center.at<double>(0, 0), circle_center.at<double>(1, 0));
+    Mat Puv = (cv::Mat_<double>(2, 1) << midifyCircle.at<double>(0, 0), midifyCircle.at<double>(1, 0));
     Mat Pxyz =  (cv::Mat_<double>(3, 1) << positions[0], positions[1], positions[2]);
     cv::hconcat(PuvList, Puv, PuvList);
     cv::hconcat(PxyzList, Pxyz, PxyzList);
@@ -534,17 +506,17 @@ void VisualServoingController::setMode(int mode)
 {
     this->mode = mode;
     switch (this->mode){
-        case MODE_VISUAL_SERVOING:
-            qDebug() << "MODE_VISUAL_SERVOING";
-            break;
-        case MODE_SHARPNESS:
-            qDebug() << "MODE_SHARPNESS";
-            break;
-        case MODE_CALIBRATION:
-            qDebug() << "MODE_CALIBRATION";
-            break;
-        default:
-            qDebug() << "MODE_NULL";
+    case MODE_VISUAL_SERVOING:
+        qDebug() << "MODE_VISUAL_SERVOING";
+        break;
+    case MODE_SHARPNESS:
+        qDebug() << "MODE_SHARPNESS";
+        break;
+    case MODE_CALIBRATION:
+        qDebug() << "MODE_CALIBRATION";
+        break;
+    default:
+        qDebug() << "MODE_NULL";
     }
 }
 
@@ -811,4 +783,3 @@ bool VisualServoingController::read_vs_parameter(QString location) {
 
     return overall_success;
 }
-

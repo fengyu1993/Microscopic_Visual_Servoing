@@ -15,10 +15,12 @@
 #include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h>
 #include <opencv2/opencv.hpp>
+#include <fstream>
 
 #include "BaslerCameraControl.h"
 #include "ParallelPlatform.h"
 #include "direct_microscopic_visual_servoing.h"
+#include "MicroscopeCalibration.h"
 
 #define MODE_NULL                                  0
 #define MODE_VISUAL_SERVOING       1
@@ -40,27 +42,8 @@ struct VS_Parameter {
     bool is_initialized = false;
 };
 
-struct Calibration_Data{
-    Eigen::VectorXd robotFocusPose = Eigen::VectorXd::Zero(6); // 1:   找到焦平面
-    Mat pointsPuvMoveXD0 = cv::Mat::zeros(2, 0, CV_64F); // 2:   焦平面, 沿x移动采点
-    Mat pointsPXYZMoveXD0 = cv::Mat::zeros(3, 0, CV_64F);
-    Mat pointsPuvMoveYD0 = cv::Mat::zeros(2, 0, CV_64F);  // 3:   焦平面, 沿y移动采点
-    Mat pointsPXYZMoveYD0 = cv::Mat::zeros(3, 0, CV_64F);
-    Mat pointsPuvMoveXYDn = cv::Mat::zeros(2, 0, CV_64F); // 4:   Z轴向上移动后，再沿xy移动采点
-    Mat pointsPXYZMoveXYDn = cv::Mat::zeros(3, 0, CV_64F);
-    Mat pointsPuvMoveXYDp = cv::Mat::zeros(2, 0, CV_64F); // 5:   Z轴向下移动后，再沿xy移动采点
-    Mat pointsPXYZMoveXYDp = cv::Mat::zeros(3, 0, CV_64F);
-    Mat pointsPuvRotateZD0 = cv::Mat::zeros(2, 0, CV_64F); // 7: 焦平面, 绕Z轴转动并采点
-    Mat pointsPXYZRotateZD0 = cv::Mat::zeros(3, 0, CV_64F);
-    std::vector<cv::Mat> posesTsRotateZD0;
-};
-
-struct Microscopic_Parameter{
-    double c_u;
-    double c_v;
-    double Z_f;
-    double D_f_k_uv;
-    Mat Tbc = cv::Mat::eye(4, 4, CV_64F);
+struct RobotPoses{
+        Eigen::VectorXd focusPose = Eigen::VectorXd::Zero(6); // 1:   找到焦平面
 };
 
 class VisualServoingController: public QObject
@@ -80,12 +63,13 @@ public:
     void visualServoingControl();
     void sharpnessControl();
     void calibrationControl();
+    void enableCheckCircle();
+    void disableCheckCircle();
     void setCircleDxDyDr(int dx, int dy, int dr);
     void setStepCalibration(int step);
     void enableflagRecord(bool flag);
     void recordPiont(Mat& PuvList, Mat& PxyzList);
-    void microscopicCalibration(const Calibration_Data& calibrationData, Microscopic_Parameter& microscopicParameter);
-
+    Vec3f checkBestCircle(Mat img);
 
 signals:
     void systemStatusChanged(const QString& status);
@@ -98,27 +82,30 @@ public:
     BaslerCameraControl* m_camera = Q_NULLPTR;
     ParallelPlatform *m_robot= Q_NULLPTR;
     Direct_Microscopic_Visual_Servoing* m_algorithm_DMVS;
+    VS_Parameter vs_parameter;
+    MicroscopeCalibration *m_microscope_calibration;
+
 private:
     QTimer* m_controlTimer;
     bool m_isRunning;
-    VS_Parameter vs_parameter;
     QElapsedTimer cycleTimer;
     int cnt;
     int circle_du, circle_dv, circle_dr;
     int mode; // 0: Null; 1: Visual servoing; 2: Sharpness; 3: Microscope Calibration
     double sharpness;
-    Mat circle_center;
+    Mat midifyCircle;
     bool flagRecord;
-    Calibration_Data calibrationData;
-    Microscopic_Parameter microscopicParameter;
+    bool flagCheckCircle;
+    RobotPoses robotPoses;
+    Vec3f bestCircle;
     int stepCalibration; // 1:   找到焦平面
-                                      // 2:   沿x移动采点
-                                      // 3:   沿y移动采点
-                                      // 4:   Z轴向上移动后，再沿xy移动采点
-                                      // 5:   Z轴向下移动后，再沿xy移动采点
-                                      // 6:   回到焦平面
-                                      // 7:   绕Z轴转动并采点
-                                      // 8:    计算参数
+        // 2:   沿x移动采点
+        // 3:   沿y移动采点
+        // 4:   Z轴向上移动后，再沿xy移动采点
+        // 5:   Z轴向下移动后，再沿xy移动采点
+        // 6:   回到焦平面
+        // 7:   绕Z轴转动并采点
+        // 8:    计算参数
     void executeControlCycle();
 };
 

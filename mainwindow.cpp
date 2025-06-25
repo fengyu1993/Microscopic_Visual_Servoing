@@ -205,7 +205,8 @@ void MainWindow::updateSystemStatus(const QString &status)
 void MainWindow::updateVisualServoingImage(QImage img)
 {
     if(this->m_visualServoingController->getMode() == MODE_VISUAL_SERVOING ||
-        this->m_visualServoingController->getMode() == MODE_NULL)
+        this->m_visualServoingController->getMode() == MODE_NULL ||
+        this->m_visualServoingController->getMode() == MODE_SHARPNESS)
     {
         QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
@@ -874,14 +875,17 @@ void MainWindow::on_radioButton_VisualServoing_clicked(bool checked)
 {
     if(checked){
         this->m_visualServoingController ->setMode(MODE_VISUAL_SERVOING);
+        ui->label_pic->removeEventFilter(this);
     }
 }
+
 
 
 void MainWindow::on_radioButton_Sharpness_clicked(bool checked)
 {
     if(checked){
         this->m_visualServoingController ->setMode(MODE_SHARPNESS);
+        ui->label_pic->removeEventFilter(this);
     }
 }
 
@@ -890,6 +894,7 @@ void MainWindow::on_radioButton_Calibration_clicked(bool checked)
 {
     if(checked){
         this->m_visualServoingController ->setMode(MODE_CALIBRATION);
+        ui->label_pic->installEventFilter(this);
     }
 }
 
@@ -1049,5 +1054,40 @@ void MainWindow::on_Calibration_Step_8_clicked(bool checked)
 void MainWindow::on_record_calibration_point_clicked()
 {
     this->m_visualServoingController->enableflagRecord(true);
+}
+
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == ui->label_pic && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        QPoint pos = mouseEvent->pos();
+
+        // 获取当前显示的图像
+            // 计算图像坐标（考虑可能的缩放）
+            qreal scaleX = (qreal) m_visualServoingController->vs_parameter.resolution_x / ui->label_pic->width();
+            qreal scaleY = (qreal) m_visualServoingController->vs_parameter.resolution_y / ui->label_pic->height();
+
+            int imageX = pos.x() * scaleX;
+            int imageY = pos.y() * scaleY;
+
+            this->circle_du = imageX - m_visualServoingController->vs_parameter.resolution_x / 2.0;
+            this->circle_dv = imageY - m_visualServoingController->vs_parameter.resolution_y / 2.0;
+            this->m_visualServoingController->setCircleDxDyDr(this->circle_du, this->circle_dv, this->circle_dr);
+            qDebug() << "Image coordinates: " << imageX << ", " << imageY;
+
+    }
+    return QMainWindow::eventFilter(watched, event);
+}
+
+void MainWindow::on_CheckCircle_clicked()
+{
+    this->m_visualServoingController->enableCheckCircle();
+}
+
+
+void MainWindow::on_Clear_uvr_clicked()
+{
+    this->m_visualServoingController->setCircleDxDyDr(0, 0, 0);
 }
 
