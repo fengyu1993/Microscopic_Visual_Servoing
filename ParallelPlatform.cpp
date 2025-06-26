@@ -300,7 +300,13 @@ bool ParallelPlatform::getTaskMat(Eigen::Matrix4d& T)
 
 cv::Mat ParallelPlatform::getTaskMat_cv()
 {
-    return cv::Mat(4, 4, CV_64FC1, const_cast<double*>(currentPose_Mat_.transpose().data()));
+    cv::Mat T(4, 4, CV_64F);
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            T.at<double>(i, j) = currentPose_Mat_(i, j);
+        }
+    }
+    return T.clone();
 }
 
 Eigen::Matrix4d ParallelPlatform::getT(Eigen::VectorXd Tlist)

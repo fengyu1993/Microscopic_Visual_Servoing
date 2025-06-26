@@ -1088,6 +1088,23 @@ void MainWindow::on_CheckCircle_clicked()
 
 void MainWindow::on_Clear_uvr_clicked()
 {
-    this->m_visualServoingController->setCircleDxDyDr(0, 0, 0);
+    circle_du = 0;
+    circle_dv = 0;
+    circle_dr = 0;
+    this->m_visualServoingController->setCircleDxDyDr(circle_du, circle_dv, circle_dr);
+}
+
+
+void MainWindow::on_SaveWorkPose_clicked()
+{
+    this->m_visualServoingController->setWorkPose();
+}
+
+
+void MainWindow::on_MoveToWorkPose_clicked()
+{
+    RobotPoses poses;
+    this->m_visualServoingController->getRobotPoses(poses);
+    this->m_visualServoingController->m_robot->setTargetPose(poses.workPose);
 }
 

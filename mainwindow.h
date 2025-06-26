@@ -162,10 +162,13 @@ private slots:
 
     void on_Calibration_Step_8_clicked(bool checked);
 
-
     void on_CheckCircle_clicked();
 
     void on_Clear_uvr_clicked();
+
+    void on_SaveWorkPose_clicked();
+
+    void on_MoveToWorkPose_clicked();
 
 protected:
     // 声明事件过滤器函数

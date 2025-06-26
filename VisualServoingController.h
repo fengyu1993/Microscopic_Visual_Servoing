@@ -43,7 +43,8 @@ struct VS_Parameter {
 };
 
 struct RobotPoses{
-        Eigen::VectorXd focusPose = Eigen::VectorXd::Zero(6); // 1:   找到焦平面
+        Eigen::VectorXd focusPose = Eigen::VectorXd::Zero(6); // 1:   显微镜标定，找到焦平面
+        Eigen::VectorXd workPose = Eigen::VectorXd::Zero(6); // 工作的初始位姿
 };
 
 class VisualServoingController: public QObject
@@ -70,6 +71,8 @@ public:
     void enableflagRecord(bool flag);
     void recordPiont(Mat& PuvList, Mat& PxyzList);
     Vec3f checkBestCircle(Mat img);
+    void setWorkPose();
+    void getRobotPoses(RobotPoses& poses);
 
 signals:
     void systemStatusChanged(const QString& status);

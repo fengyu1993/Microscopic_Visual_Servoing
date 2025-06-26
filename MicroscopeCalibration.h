@@ -4,8 +4,11 @@
 #include <Eigen/Dense>
 #include <opencv2/opencv.hpp>
 
+#define LOCATION "E:/QT/Microscopic_Visual_Servoing/resources/data/"
+
 using namespace cv;
 using namespace std;
+
 
 struct Microscopic_Parameter{
     double c_u;
@@ -48,6 +51,7 @@ class MicroscopeCalibration
         void calibration(const Calibration_Data& calibrationData, Microscopic_Parameter& microscopicParameter);
         void writeCalibrationData(const Calibration_Data& calibrationData);
         void write_to_excel(Mat data, ofstream& oFile);
+        void writeCalibrationResult(const Microscopic_Parameter& microscopicParameter);
 };
 
 

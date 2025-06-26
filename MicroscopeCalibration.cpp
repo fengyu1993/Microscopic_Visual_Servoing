@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cmath>
 
 MicroscopeCalibration::MicroscopeCalibration(int resolution_x, int resolution_y)
 {
@@ -76,8 +77,17 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     ry.at<double>(1, 0) = mean(delta_Puv_MoveYD0.row(1))[0];
     ry = ry / norm(ry);
     // 计算R_cb
-    Mat R_cb;
-    hconcat(std::vector<cv::Mat>{rx, ry, rx.cross(ry)}, R_cb);
+    double r11 = rx.at<double>(0, 0);
+    double r21 = rx.at<double>(1, 0);
+    double r12 = ry.at<double>(0, 0);
+    double r22 = ry.at<double>(1, 0);
+    double px = -(r11 + r22);
+    double py = -(r12 - r21);
+    double theta = atan2(py, px);
+    Mat R_cb = (cv::Mat_<double>(3, 3)
+                    << r11/abs(r11) * abs(cos(theta)), -r21/abs(r21) * abs(sin(theta)), 0,
+                        r21/abs(r21) * abs(sin(theta)), r11/abs(r11) * abs(cos(theta)), 0,
+                          0, 0, 1);
     // 计算t_cb
     Mat A_t_cb = Mat::zeros(0, 3, CV_64F);
     Mat b_t_cb = Mat::zeros(0, 1, CV_64F);
@@ -118,7 +128,7 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
 void MicroscopeCalibration::writeCalibrationData(const Calibration_Data& calibrationData)
 {
         string file_name = "calibrationData";
-        string location = "E:/QT/Microscopic_Visual_Servoing/resources/data/";
+        string location = LOCATION;
         ofstream oFile;
         string excel_name = location + file_name + ".xls";
         oFile.open(excel_name, ios::out|ios::trunc);
@@ -146,6 +156,26 @@ void MicroscopeCalibration::writeCalibrationData(const Calibration_Data& calibra
             write_to_excel(calibrationData.posesTsRotateZD0[i], oFile);
         }
         oFile.close();
+}
+
+void MicroscopeCalibration::writeCalibrationResult(const Microscopic_Parameter& microscopicParameter)
+{
+    string file_name = "calibrationResult";
+    string location = LOCATION;
+    ofstream oFile;
+    string excel_name = location + file_name + ".xls";
+    oFile.open(excel_name, ios::out|ios::trunc);
+    oFile << "c_u" << endl;
+    oFile << microscopicParameter.c_u << endl;
+    oFile << "c_v" << endl;
+    oFile << microscopicParameter.c_v << endl;
+    oFile << "D_f_k_uv" << endl;
+    oFile << microscopicParameter.D_f_k_uv << endl;
+    oFile << "Z_f" << endl;
+    oFile << microscopicParameter.Z_f << endl;
+    oFile << "Tbc" << endl;
+    write_to_excel(microscopicParameter.Tbc, oFile);
+    oFile.close();
 }
 
 void MicroscopeCalibration::write_to_excel(Mat data, ofstream& oFile)
