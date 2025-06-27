@@ -22,6 +22,7 @@ class Microscopic_Visual_Servoing
 public:
     Mat image_gray_desired_;
     Mat image_gray_current_;
+    Mat image_gray_error_;
     Mat image_gray_initial_;
     camera_intrinsic camera_intrinsic_;
     Mat object_velocity_; // vx vy vz wx wy wz
@@ -55,6 +56,12 @@ public:
     Mat skewSymmetric(const Mat& v);
 
     Mat get_object_velocity();
+
+    const Mat get_image_desired();
+
+    const Mat get_image_current();
+
+    const Mat get_image_error();
 
     virtual bool is_success();
 

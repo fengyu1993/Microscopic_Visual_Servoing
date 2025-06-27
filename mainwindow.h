@@ -177,7 +177,6 @@ protected:
 private:
     Ui::MainWindow *ui;
     VisualServoingController* m_visualServoingController = Q_NULLPTR;
-    QTransform  m_matrix;
     double linearVelocityStep;
     double angularVelocityStep;
     double linearPositionStep;

@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -721,7 +721,7 @@ border-width: 2px</string>
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>360</x>
       <y>550</y>
       <width>851</width>
       <height>241</height>
@@ -1014,7 +1014,7 @@ border-width: 2px</string>
       <x>340</x>
       <y>510</y>
       <width>401</width>
-      <height>21</height>
+      <height>22</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_16">
@@ -1040,6 +1040,23 @@ border-width: 2px</string>
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QLabel" name="label_pic_error">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>550</y>
+      <width>320</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-color: rgb(170, 85, 0);
+border-width: 2px</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

@@ -52,8 +52,8 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     vconcat(std::vector<cv::Mat>{A_D0, A_Dp, A_Dn}, A);
     vconcat(std::vector<cv::Mat>{b_D0, b_Dp, b_Dn}, b);
    Mat X_Df_Zf = (A.t() * A).inv() * A.t() * b;
-    microscopicParameter.D_f_k_uv = X_Df_Zf.at<double>(0,0);
-    microscopicParameter.Z_f = X_Df_Zf.at<double>(1,0);
+    microscopicParameter.D_f_k_uv = X_Df_Zf.at<double>(0,0) / 1000.0;
+    microscopicParameter.Z_f = X_Df_Zf.at<double>(1,0) / 1000.0; // 单位：μm
     // 计算rx
     repeat(calibrationData.pointsPuvMoveXD0.col(0), 1, calibrationData.pointsPuvMoveXD0.cols-1, col1_repeated);
     Mat delta_Puv_MoveXD0 = calibrationData.pointsPuvMoveXD0.colRange(1, calibrationData.pointsPuvMoveXD0.cols) - col1_repeated;
@@ -81,13 +81,13 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     double r21 = rx.at<double>(1, 0);
     double r12 = ry.at<double>(0, 0);
     double r22 = ry.at<double>(1, 0);
-    double px = -(r11 + r22);
-    double py = -(r12 - r21);
-    double theta = atan2(py, px);
+    double px = r22 - r11;
+    double py = r12 + r21;
+    double theta = atan2(py, px) + CV_PI;
     Mat R_cb = (cv::Mat_<double>(3, 3)
-                    << r11/abs(r11) * abs(cos(theta)), -r21/abs(r21) * abs(sin(theta)), 0,
-                        r21/abs(r21) * abs(sin(theta)), r11/abs(r11) * abs(cos(theta)), 0,
-                          0, 0, 1);
+                    <<cos(theta), -sin(theta), 0,
+                        -sin(theta), -cos(theta), 0,
+                          0, 0, -1);
     // 计算t_cb
     Mat A_t_cb = Mat::zeros(0, 3, CV_64F);
     Mat b_t_cb = Mat::zeros(0, 1, CV_64F);
@@ -112,14 +112,11 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     }
     Mat A_t_cb_pinv;
     invert(A_t_cb, A_t_cb_pinv, DECOMP_SVD);
-    Mat t_cb = A_t_cb_pinv * b_t_cb;
+    Mat t_cb = A_t_cb_pinv * b_t_cb / 1000.0;  // 单位：μm
     t_cb.at<double>(2, 0) = microscopicParameter.Z_f;
     // 计算Tbc
     microscopicParameter.Tbc.rowRange(0,3).colRange(0,3) = R_cb.t();
     microscopicParameter.Tbc.rowRange(0,3).col(3) = -R_cb.t() * t_cb;
-
-
-
     // std::stringstream ss2;
     // ss2 << microscopicParameter.Tbc;
     // cout << "Tbc:\n" << ss2.str().c_str();

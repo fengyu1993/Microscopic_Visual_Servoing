@@ -41,16 +41,19 @@ MainWindow::~MainWindow()
 
 void MainWindow::initUI()
 {
-    this->linearVelocityStep = 5000.0;
-    this->angularVelocityStep = 5000.0;
+    this->linearVelocityStep = 10000.0;
+    this->angularVelocityStep = 15000.0;
     this->linearPositionStep = 5000.0;
-    this->angularPositionStep = 5000.0;
+    this->angularPositionStep = 15000.0;
     this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     this->ui->linear_velocity_step->setText(QString::number(this->linearVelocityStep));
     this->ui->angular_velocity_step->setText(QString::number(this->angularVelocityStep));
     this->ui->linear_position_step->setText(QString::number(this->linearPositionStep));
     this->ui->angular_position_step->setText(QString::number(this->angularPositionStep));
     this->ui->Robot_Control->setCurrentIndex(0);
+    // int exposureTime =  this->m_visualServoingController->m_camera->getExposureTime();
+    // this->ui->lineEdit_expose->setText(QString::number(exposureTime));
+    // this->ui->horizontalSliderExpose->setValue(exposureTime);
     ui->pushButton_Start->setEnabled(true);
     ui->pushButton_Stop->setEnabled(false);
     ui->Calibration_Step_1->setEnabled(false);
@@ -208,15 +211,21 @@ void MainWindow::updateVisualServoingImage(QImage img)
         this->m_visualServoingController->getMode() == MODE_NULL ||
         this->m_visualServoingController->getMode() == MODE_SHARPNESS)
     {
-        QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
+        QPixmap pix = QPixmap::fromImage(img);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
+
+
+        QImage image_error = m_visualServoingController->m_camera->cvMatToQImage
+                             (m_visualServoingController->m_algorithm_DMVS->get_image_error());
+        QPixmap pixmap = QPixmap::fromImage(image_error);
+        ui->label_pic_error->setPixmap(pixmap.scaled(ui->label_pic_error->size(), Qt::KeepAspectRatio));
     }
 }
 
 void MainWindow::updateCalibrationImage(QImage img)
 {
     if(this->m_visualServoingController->getMode() == MODE_CALIBRATION){
-        QPixmap pix = QPixmap::fromImage(img).transformed(m_matrix);
+        QPixmap pix = QPixmap::fromImage(img);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
     }
 }
@@ -272,9 +281,9 @@ void MainWindow::initializeSystem()
 
  void MainWindow::displayDesiredImage()
  {
-     QImage qImage = m_visualServoingController->m_camera->cvMatToQImage
-                     (m_visualServoingController->m_algorithm_DMVS->image_gray_desired_);
-     QPixmap pixmap = QPixmap::fromImage(qImage);
+     QImage image_desried = m_visualServoingController->m_camera->cvMatToQImage
+                     (m_visualServoingController->m_algorithm_DMVS->get_image_desired());
+     QPixmap pixmap = QPixmap::fromImage(image_desried);
     ui->label_pic_desired->setPixmap(pixmap.scaled(ui->label_pic_desired->size(), Qt::KeepAspectRatio));
  }
 
@@ -957,7 +966,7 @@ void MainWindow::on_Calibration_Step_1_clicked(bool checked)
 void MainWindow::on_Calibration_Step_2_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第二步：请先将特征点移至左下角，再仅沿x方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第二步：请先将特征点移至合适位置，再仅沿x+方向移动并采点");
         ui->Calibration_Step_2->setText("Finish");
         this->m_visualServoingController->setStepCalibration(2);
     }
@@ -971,7 +980,7 @@ void MainWindow::on_Calibration_Step_2_clicked(bool checked)
 void MainWindow::on_Calibration_Step_3_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第三步：请仅沿y方向移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第三步：请先将特征点移至合适位置，再仅沿y+方向移动并采点");
         ui->Calibration_Step_3->setText("Finish");
         this->m_visualServoingController->setStepCalibration(3);
     }
@@ -985,7 +994,7 @@ void MainWindow::on_Calibration_Step_3_clicked(bool checked)
 void MainWindow::on_Calibration_Step_4_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第四步：请沿Z轴向上移动后，再沿xy移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第四步：请沿Z轴向上移动后，失焦后再沿xy移动并采点");
         ui->Calibration_Step_4->setText("Finish");
         this->m_visualServoingController->setStepCalibration(4);
     }
@@ -999,7 +1008,7 @@ void MainWindow::on_Calibration_Step_4_clicked(bool checked)
 void MainWindow::on_Calibration_Step_5_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第五步：请沿Z轴向下移动后，再沿xy移动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第五步：请沿Z轴向下移动后，失焦后再沿xy移动并采点");
         ui->Calibration_Step_5->setText("Finish");
         this->m_visualServoingController->setStepCalibration(5);
     }
@@ -1027,7 +1036,7 @@ void MainWindow::on_Calibration_Step_6_clicked(bool checked)
 void MainWindow::on_Calibration_Step_7_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第七步：绕Z轴转动并采点");
+        QMessageBox::information(nullptr, "Calibration", "第七步：请先将特征点移至合适位置，再仅绕Z轴转动并采点");
         ui->Calibration_Step_7->setText("Finish");
         this->m_visualServoingController->setStepCalibration(7);
     }

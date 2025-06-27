@@ -21,16 +21,9 @@ Direct_Microscopic_Visual_Servoing::Direct_Microscopic_Visual_Servoing(int resol
 // 计算直接显微视觉伺服特征误差 交互矩阵
 void Direct_Microscopic_Visual_Servoing::get_feature_error_interaction_matrix()
 {
-    // cout << "image_gray_current: rows " << this->image_gray_current_.rows << ", cols " << this->image_gray_current_.cols << ", chas" << this->image_gray_current_.channels() << endl;
-    // cout << "image_gray_desired: rows " << this->image_gray_desired_.rows << ", cols " << this->image_gray_desired_.cols << ", chas" << this->image_gray_desired_.channels() << endl;
-    // cout << "error_s_: rows " << this->error_s_.rows << ", cols " << this->error_s_.cols << endl;
-
-    this->error_s_ = this->image_gray_current_.reshape(0, this->image_gray_current_.rows*this->image_gray_current_.cols)
-                - this->image_gray_desired_.reshape(0, this->image_gray_desired_.rows*this->image_gray_desired_.cols);
-    // double error_norm = cv::norm(this->error_s_, cv::NORM_L2SQR);
-    // cout << "cost function: " << error_norm << endl;
-    // cout << "error(1:5): " << this->error_s_(cv::Range(0, 5), cv::Range(0, 1)).clone() << endl;
-    get_interaction_matrix_gray();
+    this->image_gray_error_ =  this->image_gray_current_ - this->image_gray_desired_;
+    this->error_s_ = this->image_gray_error_.reshape(0, this->image_gray_error_.rows*this->image_gray_error_.cols);
+     get_interaction_matrix_gray();
 }
 
 void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
@@ -42,21 +35,10 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
     get_image_gradient_v(I_v, I_vv);  
     cv::add(I_uu, I_vv, Delta_I);
 
-    // cout << "I_u(1:5, 1:6): \n" << I_u(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-    // cout << "I_v(1:5, 1:6): \n" << I_v(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-    // cout << "I_uu(1:5, 1:6): \n" << I_uu(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-    // cout << "I_vv(1:5, 1:6): \n" << I_vv(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-
     Mat Mat_div_Z = this->A_ * this->Mat_u_ + this->B_ * this->Mat_v_ + this->C_;
     Mat Mat_div_Zf_Z = 1 / this->camera_intrinsic_.Z_f - Mat_div_Z;
     Mat Mat_uIu_vIv = this->Mat_u_.mul(I_u) + this->Mat_v_.mul(I_v);
     Mat Mat_Phi_Delta_I = this->Phi_ * Delta_I;
-
-    // cout << "this->A_: " << this->A_ << endl  << "this->B_: " << this->B_ << endl  << "this->C_: " << this->C_ << endl ;
-    // cout << "Mat_div_Z(1:5, 1:6): \n" << Mat_div_Z(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-    // cout << "Mat_div_Zf_Z(1:5, 1:6): \n" << Mat_div_Zf_Z(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-    // cout << "Mat_uIu_vIv(1:5, 1:6): \n" << Mat_uIu_vIv(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
-    // cout << "Mat_Phi_Delta_I(1:5, 1:6): \n" << Mat_Phi_Delta_I(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
 
     Mat L_Ic_vx = -I_u.mul(Mat_div_Z) * this->camera_intrinsic_.D_f_k_uv;
     Mat L_Ic_vy = -I_v.mul(Mat_div_Z) * this->camera_intrinsic_.D_f_k_uv;
@@ -107,6 +89,10 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
             L_e_col6.at<double>(i) = L_Ic_wz.at<double>(i);
         }
     });
+    this->L_e_.col(2).setTo(0);
+    this->L_e_.col(3).setTo(0);
+    this->L_e_.col(4).setTo(0);
+    this->L_e_.col(5).setTo(0);
 }
 
 // 计算矩阵u方向上的梯度

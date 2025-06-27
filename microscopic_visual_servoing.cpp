@@ -13,6 +13,7 @@ Microscopic_Visual_Servoing::Microscopic_Visual_Servoing(int resolution_x, int r
     this->resolution_y_ = resolution_y;
     this->image_gray_desired_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
     this->image_gray_current_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
+    this->image_gray_error_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
     this->object_velocity_ = Mat::zeros(6, 1, CV_64FC1);
     this->iteration_num_ = 0;
     this->Ad_Tbc_ = Mat::zeros(6, 6, CV_64FC1);
@@ -61,10 +62,28 @@ Mat Microscopic_Visual_Servoing::get_object_velocity()
     // cout << "L_e(1:5, 1:6): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 6)).clone() << endl;
     // cout << "error_s_(1:5): \n" << this->L_e_(cv::Range(0, 5), cv::Range(0, 1)).clone() << endl;
     Mat L_e_transpose = this->L_e_.t();
-    Mat L_e_left_inverse = (L_e_transpose * this->L_e_).inv() * L_e_transpose;
-    Mat camera_velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
-    this->object_velocity_ = this->Ad_Tbc_ * camera_velocity;
+    Mat L_e_left_inverse = (L_e_transpose * this->L_e_ + 1e-6*Mat::eye(6, 6, CV_64F)).inv() * L_e_transpose;
+    Mat velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
+
+    // velocity = (Mat_<double>(6, 1) << 0, 0, 0, 0, 0, 0.005); // μm/s,  °/s
+    this->object_velocity_ = this->Ad_Tbc_ * velocity;
     return this->object_velocity_;
+}
+
+const Mat Microscopic_Visual_Servoing::get_image_desired()
+{
+    return this->image_gray_desired_;
+}
+
+const Mat Microscopic_Visual_Servoing::get_image_current()
+{
+    return this->image_gray_current_;
+}
+
+
+const Mat Microscopic_Visual_Servoing::get_image_error()
+{
+    return this->image_gray_error_;
 }
 
 // 判断是否伺服成功

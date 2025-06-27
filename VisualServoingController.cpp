@@ -19,7 +19,7 @@ VisualServoingController::VisualServoingController()
 
     QString imagePath = vs_parameter.resource_location +"/" + vs_parameter.image_desired_name;
     // qDebug() << "imagePath: " << imagePath;
-    Mat image_desired_gray = imread(imagePath.toStdString(), cv::IMREAD_GRAYSCALE);
+    Mat image_desired_gray = imread(imagePath.toStdString(), cv::IMREAD_UNCHANGED);
     Mat image_desired;
     image_desired_gray.convertTo(image_desired, CV_64F, 1.0/255.0);
     m_algorithm_DMVS = new Direct_Microscopic_Visual_Servoing(vs_parameter.resolution_x, vs_parameter.resolution_y);
@@ -39,77 +39,12 @@ VisualServoingController::VisualServoingController()
     circle_dr = 0;
     midifyCircle = cv::Mat::zeros(3, 1, CV_64FC1);
     flagRecord = false;
-    flagCheckCircle = true;
+    flagCheckCircle = false;
 
     bestCircle <<  vs_parameter.resolution_x/2,  vs_parameter.resolution_y/2, vs_parameter.resolution_y / 10.0;
 
     connect(m_controlTimer, &QTimer::timeout, this, &VisualServoingController::executeControlCycle);
 
-    // m_microscope_calibration->calibrationData.pointsPuvMoveXD0
-    //     = (cv::Mat_<double>(2, 4) << 318.5, 514.5, 814.5, 1131.5, 838.5, 730.5, 571.5, 401.5);
-    // m_microscope_calibration->calibrationData.pointsPXYZMoveXD0
-    //     = (cv::Mat_<double>(3, 4) << -10000, 145000, 380000, 630000, -135000,
-    //                                                     -135000, -135000, -135000, 0, 0, 0, 0);
-    // m_microscope_calibration->calibrationData.pointsPuvMoveYD0
-    //     = (cv::Mat_<double>(2, 4) << 675.5, 828.5, 945.5, 1052.5, 292.5, 572.5, 789.5, 989.5);
-    // m_microscope_calibration->calibrationData.pointsPXYZMoveYD0
-    //     = (cv::Mat_<double>(3, 4) << 390000, 390000, 390000, 390000, 80000,
-    //                                                     -140000, -310000, -465000, 0, 0, 0, 0);
-    //  m_microscope_calibration->calibrationData.pointsPuvMoveXYDn
-    //     = (cv::Mat_<double>(2, 4) << 1015.5, 760.5, 592.5, 358.5,  933.5, 621.5, 316.5, 445.5);
-    // m_microscope_calibration->calibrationData.pointsPXYZMoveXYDn
-    //     = (cv::Mat_<double>(3, 4) << 390000, 335000, 335000, 150000, -425000, -145000,
-    //                                                     100000, 100000, 215000, 215000, 215000, 215000);
-    // m_microscope_calibration->calibrationData.pointsPuvMoveXYDp
-    //     = (cv::Mat_<double>(2, 3) << 325.5, 552.5, 736.5, 465.5, 791.5, 293.5);
-    // m_microscope_calibration->calibrationData.pointsPXYZMoveXYDp
-    //     = (cv::Mat_<double>(3, 3) << 150000, 180000, 450000, 100000, -170000,
-    //                                                     65000, -190000, -190000, -190000);
-    // m_microscope_calibration->calibrationData.pointsPuvRotateZD0
-    //     = (cv::Mat_<double>(2, 5) << 212.5, 256.5, 162.5, 106.5, 87.5,
-    //                                                         710.5, 971.5, 534.5, 273.5, 189.5);
-    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
-    //     (cv::Mat_<double>(4, 4) << 1, 0, 0, 0,
-    //                                                     0, 1, 0, 0,
-    //                                                     0, 0, 1, 0,
-    //                                                     0, 0, 0, 1));
-    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
-    //     (cv::Mat_<double>(4, 4) << 0.99996, 0.00898832, 0, 0,
-    //                                                      -0.00898832, 0.99996, 0, 0,
-    //                                                         0, 0, 1, 0,  0, 0, 0, 1));
-    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
-    //     (cv::Mat_<double>(4, 4) << 0.999982, -0.00593408, 0, 0,
-    //                                                   0.00593408, 0.999982, 0, 0,
-    //                                                     0, 0, 1, 0,  0, 0, 0, 1));
-    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
-    //     (cv::Mat_<double>(4, 4) << 0.99989, -0.0148348, 0, 0,
-    //                                                     0.0148348, 0.99989, 0, 0,
-    //                                                     0, 0, 1, 0,  0, 0, 0, 1));
-    // m_microscope_calibration->calibrationData.posesTsRotateZD0.push_back(
-    //     (cv::Mat_<double>(4, 4) << 0.999843, -0.0177142, 0, 0,
-    //                                                      0.0177142, 0.999843, 0, 0,
-    //                                                      0, 0, 1, 0,  0, 0, 0, 1));
-    // qDebug() << "Calibrarion start";
-    // m_microscope_calibration->calibration(m_microscope_calibration->calibrationData, m_microscope_calibration->microscopicParameter);
-    // m_microscope_calibration->writeCalibrationResult(m_microscope_calibration->microscopicParameter);
-
-    // std::stringstream ss;
-    // ss.str("");
-    // ss << m_microscope_calibration->microscopicParameter.c_u;
-    // qDebug() << "c_u:\n" << ss.str().c_str();
-    // ss.str("");
-    // ss << m_microscope_calibration->microscopicParameter.c_v;
-    // qDebug() << "c_v:\n" << ss.str().c_str();
-    // ss.str("");
-    // ss << m_microscope_calibration->microscopicParameter.D_f_k_uv;
-    // qDebug() << "D_f_k_uv:\n" << ss.str().c_str();
-    // ss.str("");
-    // ss << m_microscope_calibration->microscopicParameter.Z_f;
-    // qDebug() << "Z_f:\n" << ss.str().c_str();
-    // ss.str("");
-    // ss << m_microscope_calibration->microscopicParameter.Tbc;
-    // qDebug() << "Tbc:\n" << ss.str().c_str();
-    //     qDebug() << "Calibrarion finish";
 }
 VisualServoingController::~VisualServoingController()
 {
@@ -156,8 +91,6 @@ void VisualServoingController::visualServoingControl()
             // 更新平面参数
             m_algorithm_DMVS->updeta_planar_paramters(0, 0, 1.0/vs_parameter.camera_parameters.Z_f);
             // 获取最新图像
-            // std::shared_ptr<const cv::Mat> framePtr =  m_camera->getLatestFrameShared();
-            // m_algorithm_DMVS->image_gray_current_ = *framePtr;
             m_algorithm_DMVS->image_gray_current_  = m_camera->getLatestFrame();
 
             // cv::imshow("current", m_algorithm_DMVS->image_gray_current_);
@@ -180,16 +113,19 @@ void VisualServoingController::visualServoingControl()
             }
             // // 执行机器人运动
             Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
-            velocity_eigen.head(3) = velocity_eigen.head(3) * 1e9;
-            velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6;
-            std::stringstream ss2;
-            ss2 << velocity_eigen;
-            qDebug() << "velocity:\n" << ss2.str().c_str();
+            velocity_eigen.head(3) = velocity_eigen.head(3) * 1e3; // 机器人控制平台单位：nm
+            velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6; // 机器人控制平台单位：μ°
+            // std::stringstream ss2;
+            // ss2 << velocity_eigen;
+            // qDebug() << "velocity:\n" << ss2.str().c_str();
 
             // if(!m_robot-> setTargetVelocity(velocity_eigen)) {
             //     emit servoingError("Robot movement failed");
             //     return;
             // }
+
+            double e = norm(m_algorithm_DMVS->get_image_error(), NORM_INF);
+            qDebug() << "error: " << e;
             // 更新视觉伺服数据
             QVariantMap visData;
             visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
@@ -467,7 +403,6 @@ bool VisualServoingController::initializeSystem()
         emit systemStatusChanged("Robot connection failed");
         return false;
     }
-
     emit systemStatusChanged("System initialized");
     return true;
 }
