@@ -37,6 +37,7 @@ struct VS_Parameter {
     QString resource_location;
     QString image_desired_name;
     Mat pose_desired;
+    Mat pose_work;
     Mat Tbc;
     int max_iteration;
     bool is_initialized = false;

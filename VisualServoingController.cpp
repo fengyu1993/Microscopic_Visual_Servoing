@@ -80,7 +80,7 @@ void VisualServoingController::executeControlCycle()
 void VisualServoingController::visualServoingControl()
 {
     if(m_isRunning){
-        qDebug() << "cnt: " << ++cnt;
+        // qDebug() << "cnt: " << ++cnt;
         // qDebug() << "executeControlCycle thread ID:" << QThread::currentThreadId();
         // cv::namedWindow("current", cv::WINDOW_AUTOSIZE);
         // cv::namedWindow("desired", cv::WINDOW_AUTOSIZE);
@@ -119,13 +119,14 @@ void VisualServoingController::visualServoingControl()
             // ss2 << velocity_eigen;
             // qDebug() << "velocity:\n" << ss2.str().c_str();
 
-            // if(!m_robot-> setTargetVelocity(velocity_eigen)) {
-            //     emit servoingError("Robot movement failed");
-            //     return;
-            // }
+            if(!m_robot-> setTargetVelocity(velocity_eigen)) {
+                emit servoingError("Robot movement failed");
+                return;
+            }
 
-            double e = norm(m_algorithm_DMVS->get_image_error(), NORM_INF);
-            qDebug() << "error: " << e;
+            // double e = norm(m_algorithm_DMVS->get_image_error(), NORM_INF);
+            qDebug() << "error: " << m_algorithm_DMVS->cost_function_value_;
+            qDebug() << "阈值: " << m_algorithm_DMVS->epsilon_;
             // 更新视觉伺服数据
             QVariantMap visData;
             visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
@@ -461,9 +462,12 @@ void VisualServoingController::output_vs_parameter()
     std::stringstream ss1;
     ss1 << vs_parameter.Tbc;
     qDebug() << "Tbc:\n" << ss1.str().c_str();
-    std::stringstream ss2;
-    ss2 << vs_parameter.pose_desired;
-    qDebug() << "pose_desired:\n" << ss2.str().c_str();
+    ss1.str("");
+    ss1 << vs_parameter.pose_desired;
+    qDebug() << "pose_desired:\n" << ss1.str().c_str();
+    ss1.str("");
+    ss1 << vs_parameter.pose_work;
+    qDebug() << "pose_work:\n" << ss1.str().c_str();
 }
 
 void VisualServoingController::setMode(int mode)
@@ -506,6 +510,7 @@ bool VisualServoingController::read_vs_parameter(QString location) {
     enum ParsingState {
         ReadingGeneral,
         ReadingPoseDesired,
+        ReadingWorkDesired,
         ReadingTbc
     };
     ParsingState currentState = ReadingGeneral;
@@ -644,7 +649,42 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                             overall_success = false;
                         }
                     } // If parts.size() == 1, then it's just the key, and matrix data starts next line (handled by subsequent state)
-                } else if (paramName == "Tbc") {
+                }  else if (paramName == "pose_work") {
+                    // Start reading matrix, initialize currentMatrix
+                    currentMatrix = cv::Mat::zeros(4, 4, CV_64F);
+                    matrixRowsRead = 0;
+                    currentState = ReadingWorkDesired;
+
+                    // If the line "pose_work" also contains the first row of matrix data
+                    if (parts.size() > 1) { // Check if there are elements after "pose_desired"
+                        QStringList matrixRowParts = parts.mid(1); // Get elements after the key
+                        // Remove empty parts from the end of this sublist
+                        while (!matrixRowParts.isEmpty() && matrixRowParts.last().isEmpty()) {
+                            matrixRowParts.removeLast();
+                        }
+
+                        if (matrixRowParts.size() == 4) { // Expect 4 elements for the first row
+                            for (int j = 0; j < 4; ++j) {
+                                QString elementStr = matrixRowParts.at(j).trimmed();
+                                double element = 0.0;
+                                if (!elementStr.isEmpty()) { // Only try to convert if not empty
+                                    element = elementStr.toDouble(&ok);
+                                    if (!ok) {
+                                        qWarning() << "Warning: Failed to convert pose_desired matrix element '" << elementStr << "' to double for line:" << line << ". Setting to 0.0.";
+                                        element = 0.0; // Use 0.0 if conversion fails
+                                    }
+                                }
+                                currentMatrix.at<double>(matrixRowsRead, j) = element;
+                            }
+                            matrixRowsRead++; // Increment row count as first row is parsed
+                        } else {
+                            qWarning() << "Warning: Invalid pose_desired first row format. Expected 4 elements on the key line for line:" << line << ". Using default matrix.";
+                            currentState = ReadingGeneral; // Reset state
+                            vs_parameter.pose_work = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                            overall_success = false;
+                        }
+                    } // If parts.size() == 1, then it's just the key, and matrix data starts next line (handled by subsequent state)
+                }else if (paramName == "Tbc") {
                     // Start reading matrix, initialize currentMatrix
                     currentMatrix = cv::Mat::zeros(4, 4, CV_64F);
                     matrixRowsRead = 0;
@@ -700,6 +740,7 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                     currentState = ReadingGeneral; // Reset state
                     if (currentState == ReadingPoseDesired) vs_parameter.pose_desired = cv::Mat::eye(4,4,CV_64F); // Reset to default
                     else if (currentState == ReadingTbc) vs_parameter.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                    else if (currentState == ReadingWorkDesired) vs_parameter.pose_work = cv::Mat::eye(4,4,CV_64F); // Reset to default
                     overall_success = false; // Indicate a problem during parsing
                     continue; // Skip current malformed line
                 }
@@ -723,6 +764,9 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                     if (currentState == ReadingPoseDesired) {
                         vs_parameter.pose_desired = currentMatrix.clone(); // Assign the parsed matrix
                         qDebug() << "Successfully parsed pose_desired matrix.";
+                    } else if (currentState == ReadingWorkDesired) {
+                        vs_parameter.pose_work = currentMatrix.clone(); // Assign the parsed matrix
+                        qDebug() << "Successfully parsed pose_work matrix.";
                     } else if (currentState == ReadingTbc) {
                         vs_parameter.Tbc = currentMatrix.clone(); // Assign the parsed matrix
                         qDebug() << "Successfully parsed Tbc matrix.";

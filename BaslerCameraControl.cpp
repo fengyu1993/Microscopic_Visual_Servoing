@@ -578,7 +578,7 @@ QImage BaslerCameraControl::cvMatToQImage(const cv::Mat& mat)
         case CV_64FC1: {
             cv::Mat normalized;
             // 归一化到 [0, 255] 并转换为 8UC1
-            cv::normalize(mat, normalized, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+            mat.convertTo(normalized, CV_8UC1, 255.0);
             return  QImage(normalized.data, normalized.cols, normalized.rows,
                          normalized.step, QImage::Format_Grayscale8).copy();
         }

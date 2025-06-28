@@ -89,7 +89,7 @@ const Mat Microscopic_Visual_Servoing::get_image_error()
 // 判断是否伺服成功
 bool Microscopic_Visual_Servoing::is_success()
 {
-    this->cost_function_value_ = cv::norm(this->error_s_, cv::NORM_L2SQR);
+    this->cost_function_value_ = cv::norm(this->error_s_, cv::NORM_L2);
 
     if(this->cost_function_value_ < this->epsilon_)
     {

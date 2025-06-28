@@ -51,9 +51,6 @@ void MainWindow::initUI()
     this->ui->linear_position_step->setText(QString::number(this->linearPositionStep));
     this->ui->angular_position_step->setText(QString::number(this->angularPositionStep));
     this->ui->Robot_Control->setCurrentIndex(0);
-    // int exposureTime =  this->m_visualServoingController->m_camera->getExposureTime();
-    // this->ui->lineEdit_expose->setText(QString::number(exposureTime));
-    // this->ui->horizontalSliderExpose->setValue(exposureTime);
     ui->pushButton_Start->setEnabled(true);
     ui->pushButton_Stop->setEnabled(false);
     ui->Calibration_Step_1->setEnabled(false);
@@ -214,9 +211,11 @@ void MainWindow::updateVisualServoingImage(QImage img)
         QPixmap pix = QPixmap::fromImage(img);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
 
-
-        QImage image_error = m_visualServoingController->m_camera->cvMatToQImage
-                             (m_visualServoingController->m_algorithm_DMVS->get_image_error());
+        // QImage image_error = m_visualServoingController->m_camera->cvMatToQImage
+        //                      (m_visualServoingController->m_algorithm_DMVS->get_image_error() + 1.0);
+        Mat img;
+        normalize(m_visualServoingController->m_algorithm_DMVS->get_image_error() , img, 0, 255, NORM_MINMAX, CV_8U);
+        QImage image_error = m_visualServoingController->m_camera->cvMatToQImage(img);
         QPixmap pixmap = QPixmap::fromImage(image_error);
         ui->label_pic_error->setPixmap(pixmap.scaled(ui->label_pic_error->size(), Qt::KeepAspectRatio));
     }
@@ -390,6 +389,12 @@ void MainWindow::on_pushButton_Connect_clicked(bool checked)
             ui->label_pic->setText("未检测到相机，请连接设备！");
         }
         ui->pushButton_Connect->setText("Disconnect");// 断开连接
+
+
+        int exposureTime =  this->m_visualServoingController->m_camera->getExposureTime();
+        this->ui->lineEdit_expose->setText(QString::number(exposureTime));
+        this->ui->horizontalSliderExpose->setMaximum(exposureTime * 2);
+        this->ui->horizontalSliderExpose->setValue(exposureTime);
     }
     else{
         this->m_visualServoingController->m_camera->closeCamera();
@@ -874,9 +879,15 @@ void MainWindow::on_MoveToZero_2_clicked()
 
 void MainWindow::on_SaveDesiredImage_clicked()
 {
-    cv::Mat img_64f = this->m_visualServoingController->m_camera->saveDesiredImage();
-    this->m_visualServoingController->m_algorithm_DMVS->set_image_gray_desired(img_64f);
-    displayDesiredImage();
+    if(this->m_visualServoingController->m_camera->isOpen())
+    {
+        cv::Mat img_64f = this->m_visualServoingController->m_camera->saveDesiredImage();
+        this->m_visualServoingController->m_algorithm_DMVS->set_image_gray_desired(img_64f);
+        displayDesiredImage();
+    }
+    else{
+        qDebug() << "相机未打开，保存期望图像失败";
+    }
 }
 
 
@@ -1116,4 +1127,5 @@ void MainWindow::on_MoveToWorkPose_clicked()
     this->m_visualServoingController->getRobotPoses(poses);
     this->m_visualServoingController->m_robot->setTargetPose(poses.workPose);
 }
+
 
