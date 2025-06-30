@@ -8,6 +8,7 @@
 #include <QtCharts>
 
 #include "VisualServoingController.h"
+#include "MediaSaver.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -170,6 +171,15 @@ private slots:
 
     void on_MoveToWorkPose_clicked();
 
+    void on_SaveDesiredPose_clicked();
+
+    void on_MoveToDesiredPose_clicked();
+
+
+signals:
+           void saveVideo(QString filePath, int fps, QString codec = "MJPG", bool isColor = true);
+
+
 protected:
     // 声明事件过滤器函数
     bool eventFilter(QObject *watched, QEvent *event) override;
@@ -177,6 +187,7 @@ protected:
 private:
     Ui::MainWindow *ui;
     VisualServoingController* m_visualServoingController = Q_NULLPTR;
+    MediaSaver* m_mediaSaver = Q_NULLPTR;
     double linearVelocityStep;
     double angularVelocityStep;
     double linearPositionStep;

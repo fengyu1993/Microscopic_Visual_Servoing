@@ -15,11 +15,11 @@
 using namespace Pylon;
 using namespace GenApi;
 
-class BaslerCameraControl : public QThread
+class BaslerCameraControl:  public QObject
 {
     Q_OBJECT
 public:
-    explicit BaslerCameraControl();
+    explicit BaslerCameraControl(double hz);
     ~BaslerCameraControl();
 
     enum BaslerCameraControl_Type{
@@ -39,7 +39,7 @@ public:
     int openCamera(QString cameraName);
     int closeCamera();
     bool isOpen();
-    void run();
+    void grab();
 
     void setFeatureTriggerSourceType(QString type); // 设置种类
     QString getFeatureTriggerSourceType(); // 获取种类：软触发、外触发等等
@@ -53,7 +53,6 @@ public:
     int getExposureTime(); // 获取曝光时间
     void setGain(double Gain);
     int getGain();
-    void setFrameRate(int value);
     int getFrameRate();
     void autoExposureOnce();
 
@@ -88,6 +87,8 @@ private:
     bool m_isOpen = false; // 是否打开摄像头
     QSize m_size;
     mutable QMutex m_frameMutex;
+    QTimer *m_coarseTimer_;
+    int fps;
 
 public:
     QImage img_Q;

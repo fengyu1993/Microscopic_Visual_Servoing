@@ -102,7 +102,7 @@ bool ParallelPlatform::connect()
     // result_ = Narpod_Set_Property(ntHandle_, PIVOT_MODE, PIVOT_RELATIVE);
     result_ = Narpod_SetPivot(ntHandle_, 0, 0, 0);
     result_ = Narpod_SetCoordinateSystem(ntHandle_,0,0,0,0,0,0);
-    // result_ = Narpod_FindReferenceMarks(ntHandle_);
+    result_ = Narpod_FindReferenceMarks(ntHandle_);
     bool res = checkresult();
     if (res)
     {
@@ -154,6 +154,7 @@ bool ParallelPlatform::findReferance()
     }
     return res;
 }
+
 
 bool ParallelPlatform::startupdate()
 {

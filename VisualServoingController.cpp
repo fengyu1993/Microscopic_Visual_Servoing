@@ -5,12 +5,14 @@ VisualServoingController::VisualServoingController()
 
     if(read_vs_parameter("E:/QT/Microscopic_Visual_Servoing/resources/data/VS_Parameter.csv")){
         output_vs_parameter();
+        this->robotPoses.workPose = cvMatToEigenMatrix(vs_parameter.pose_work);
+        this->robotPoses.desiredPose = cvMatToEigenMatrix(vs_parameter.pose_desired);
     }
     else{
         emit servoingError("Read VS parameters failed");
     }
 
-    this->m_camera = new BaslerCameraControl();
+    this->m_camera = new BaslerCameraControl(20);
 
     this->m_robot = new  ParallelPlatform(50);
     QThread* thread_m_robot = new QThread();
@@ -80,7 +82,7 @@ void VisualServoingController::executeControlCycle()
 void VisualServoingController::visualServoingControl()
 {
     if(m_isRunning){
-        // qDebug() << "cnt: " << ++cnt;
+        // qDebug() << "cnt: " << m_algorithm_DMVS->iteration_num_;
         // qDebug() << "executeControlCycle thread ID:" << QThread::currentThreadId();
         // cv::namedWindow("current", cv::WINDOW_AUTOSIZE);
         // cv::namedWindow("desired", cv::WINDOW_AUTOSIZE);
@@ -102,6 +104,7 @@ void VisualServoingController::visualServoingControl()
             // 存储数据
             m_algorithm_DMVS->save_all_data(T);
             // 判断是否成功
+            // vs_parameter.max_iteration = 20;
             if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
             {
                 qDebug() << "Visual Servoing Finish";
@@ -109,7 +112,7 @@ void VisualServoingController::visualServoingControl()
                 qDebug() << "Write Data Finish";
                 velocity = 0 * velocity;
                 stopServoing();
-                emit systemStatusChanged("Visual servoing success");
+                emit systemStatusChanged(VS_SUCCESS);
             }
             // // 执行机器人运动
             Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
@@ -357,12 +360,31 @@ void VisualServoingController::disableCheckCircle()
 
 void VisualServoingController::setWorkPose()
 {
-    m_robot->getTaskPositions(robotPoses.workPose);
+    m_robot->getTaskMat(robotPoses.workPose);
+}
+
+void VisualServoingController::setDesiredPose()
+{
+    m_robot->getTaskMat(robotPoses.desiredPose);
 }
 
  void VisualServoingController::getRobotPoses(RobotPoses& poses)
 {
      poses = this->robotPoses;
+}
+
+void VisualServoingController::saveRobotPoses()
+{
+    string file_name = "robotPoses";
+    string location = LOCATION;
+    ofstream oFile;
+    string excel_name = location + file_name + ".xls";
+    oFile.open(excel_name, ios::out|ios::trunc);
+    oFile << "workPose" << endl;
+    write_to_excel(this->robotPoses.workPose, oFile);
+    oFile << "desiredPose" << endl;
+    write_to_excel(this->robotPoses.desiredPose, oFile);
+    oFile.close();
 }
 
 void VisualServoingController::recordPiont(Mat& PuvList, Mat& PxyzList)
@@ -790,4 +812,38 @@ bool VisualServoingController::read_vs_parameter(QString location) {
     }
 
     return overall_success;
+}
+
+
+void VisualServoingController::write_to_excel(const Eigen::MatrixXd& data, ofstream& oFile)
+{
+    for (int i = 0; i < data.rows(); ++i) {
+        for (int j = 0; j < data.cols(); ++j) {
+            oFile << data(i, j) << '\t';
+        }
+        oFile << endl;
+    }
+}
+
+Eigen::MatrixXd VisualServoingController::cvMatToEigenMatrix(const cv::Mat& cvMat) {
+    // 确保 cvMat 是 double 类型
+    CV_Assert(cvMat.type() == CV_64F);
+
+    Eigen::MatrixXd eigenMat(cvMat.rows, cvMat.cols);
+    for (int i = 0; i < cvMat.rows; ++i) {
+        for (int j = 0; j < cvMat.cols; ++j) {
+            eigenMat(i, j) = cvMat.at<double>(i, j);
+        }
+    }
+    return eigenMat;
+}
+
+cv::Mat VisualServoingController::eigenMatrixToCvMat(const Eigen::MatrixXd& eigenMat) {
+    cv::Mat cvMat(eigenMat.rows(), eigenMat.cols(), CV_64F);
+    for (int i = 0; i < eigenMat.rows(); ++i) {
+        for (int j = 0; j < eigenMat.cols(); ++j) {
+            cvMat.at<double>(i, j) = eigenMat(i, j);
+        }
+    }
+    return cvMat;
 }

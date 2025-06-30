@@ -16,6 +16,11 @@ MainWindow::MainWindow(QWidget *parent)
     m_visualServoingController->moveToThread(thread_visual_servoing);
     thread_visual_servoing->start();
 
+    this->m_mediaSaver = new MediaSaver();
+    QThread* thread_media_saver = new QThread();
+    m_mediaSaver->moveToThread(thread_media_saver);
+    thread_media_saver->start();
+
     // qDebug() << "MainWindow thread ID:" << QThread::currentThreadId();
 
     // 初始化UI
@@ -36,6 +41,7 @@ MainWindow::~MainWindow()
         this->m_visualServoingController->m_camera->deleteAll(); // 关闭相机（假设存在该方法）
     }
     delete this->m_visualServoingController;
+    delete this->m_mediaSaver;
     delete ui;
 }
 
@@ -131,6 +137,7 @@ void MainWindow::setupConnections()
     connect(this-> m_visualServoingController, &VisualServoingController::sigCalibrationImage, this, &MainWindow::updateCalibrationImage);
     connect(this->m_visualServoingController, &VisualServoingController::systemStatusChanged, this, &MainWindow::updateSystemStatus);
     connect(this->m_visualServoingController, &VisualServoingController::updateVisualServoingData, this, &MainWindow::updateVSVisualizationData);
+    connect(this, &MainWindow::saveVideo, m_mediaSaver, &MediaSaver::saveVideo);
 }
 
 void MainWindow::getdateSeries(QLineSeries *series, double t, double pos, double&  minY, double&  maxY)
@@ -174,6 +181,16 @@ void MainWindow::updateChart(QChartView *chartView, double t, double minY, doubl
 void MainWindow::updateSystemStatus(const QString &status)
 {
     ui->label_SystemStatus->setText(status);
+    if (status == VS_SUCCESS)
+    {
+        QString name = "visualServoingVideo";
+        QString location = LOCATION;
+        QString videoPath = location + name + ".avi";
+        qDebug() << videoPath;
+        QString videoCode = "MJPG";
+        int fps = this->m_visualServoingController->m_camera->getFrameRate();
+        emit saveVideo(videoPath, fps, videoCode, true);
+    }
 }
 
  void MainWindow::updateRobotStatus(const  Eigen::VectorXd current_positions, const Eigen::VectorXd target_velocity, const Eigen::VectorXd current_pose)
@@ -208,6 +225,11 @@ void MainWindow::updateVisualServoingImage(QImage img)
         this->m_visualServoingController->getMode() == MODE_NULL ||
         this->m_visualServoingController->getMode() == MODE_SHARPNESS)
     {
+        if(this->m_visualServoingController->getMode() == MODE_VISUAL_SERVOING)
+        {
+            this->m_mediaSaver->addFrame(img);
+        }
+
         QPixmap pix = QPixmap::fromImage(img);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
 
@@ -296,6 +318,7 @@ void MainWindow::onSystemStart()
     // 判断模式
     if (ui->radioButton_VisualServoing->isChecked()) {
         this->m_visualServoingController ->setMode(MODE_VISUAL_SERVOING);
+        this->m_mediaSaver->clearFrames();
     } else if (ui->radioButton_Sharpness->isChecked()) {
         this->m_visualServoingController ->setMode(MODE_SHARPNESS);
     } else if (ui->radioButton_Calibration->isChecked()) {
@@ -1118,6 +1141,7 @@ void MainWindow::on_Clear_uvr_clicked()
 void MainWindow::on_SaveWorkPose_clicked()
 {
     this->m_visualServoingController->setWorkPose();
+    this->m_visualServoingController->saveRobotPoses();
 }
 
 
@@ -1125,7 +1149,25 @@ void MainWindow::on_MoveToWorkPose_clicked()
 {
     RobotPoses poses;
     this->m_visualServoingController->getRobotPoses(poses);
-    this->m_visualServoingController->m_robot->setTargetPose(poses.workPose);
+    Eigen::VectorXd L = this->m_visualServoingController->m_robot->getList(poses.workPose);
+    this->m_visualServoingController->m_robot->setTargetPose(L);
+}
+
+
+
+void MainWindow::on_SaveDesiredPose_clicked()
+{
+    this->m_visualServoingController->setDesiredPose();
+    this->m_visualServoingController->saveRobotPoses();
+}
+
+
+void MainWindow::on_MoveToDesiredPose_clicked()
+{
+    RobotPoses poses;
+    this->m_visualServoingController->getRobotPoses(poses);
+    Eigen::VectorXd L = this->m_visualServoingController->m_robot->getList(poses.desiredPose);
+    this->m_visualServoingController->m_robot->setTargetPose(L);
 }
 
 

@@ -26,6 +26,7 @@
 #define MODE_VISUAL_SERVOING       1
 #define MODE_SHARPNESS                      2
 #define MODE_CALIBRATION                 3
+#define VS_SUCCESS                                  "Visual servoing success"
 
 struct VS_Parameter {
     int resolution_x;
@@ -45,7 +46,8 @@ struct VS_Parameter {
 
 struct RobotPoses{
         Eigen::VectorXd focusPose = Eigen::VectorXd::Zero(6); // 1:   显微镜标定，找到焦平面
-        Eigen::VectorXd workPose = Eigen::VectorXd::Zero(6); // 工作的初始位姿
+        Eigen::Matrix4d workPose = Eigen::Matrix4d::Identity(); // 工作的初始位姿
+        Eigen::Matrix4d desiredPose = Eigen::Matrix4d::Identity(); // 期望位姿
 };
 
 class VisualServoingController: public QObject
@@ -73,7 +75,12 @@ public:
     void recordPiont(Mat& PuvList, Mat& PxyzList);
     Vec3f checkBestCircle(Mat img);
     void setWorkPose();
+    void setDesiredPose();
     void getRobotPoses(RobotPoses& poses);
+    void saveRobotPoses();
+    void write_to_excel(const Eigen::MatrixXd& data, ofstream& oFile);
+    Eigen::MatrixXd cvMatToEigenMatrix(const cv::Mat& cvMat);
+    cv::Mat eigenMatrixToCvMat(const Eigen::MatrixXd& eigenMat);
 
 signals:
     void systemStatusChanged(const QString& status);

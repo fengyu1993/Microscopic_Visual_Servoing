@@ -1011,10 +1011,10 @@ border-width: 2px</string>
    <widget class="QWidget" name="horizontalLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>340</x>
-      <y>510</y>
+      <x>360</x>
+      <y>500</y>
       <width>401</width>
-      <height>22</height>
+      <height>49</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_16">
@@ -1026,18 +1026,40 @@ border-width: 2px</string>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="SaveWorkPose">
-       <property name="text">
-        <string>SaveWorkPose </string>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_24">
+       <item>
+        <widget class="QPushButton" name="SaveWorkPose">
+         <property name="text">
+          <string>SaveWorkPose </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="SaveDesiredPose">
+         <property name="text">
+          <string>SaveDesiredPose</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QPushButton" name="MoveToWorkPose">
-       <property name="text">
-        <string>MoveToWorkPose </string>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_25">
+       <item>
+        <widget class="QPushButton" name="MoveToWorkPose">
+         <property name="text">
+          <string>MoveToWorkPose </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="MoveToDesiredPose">
+         <property name="text">
+          <string>MoveToDesiredPose</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>

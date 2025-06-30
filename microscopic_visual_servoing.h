@@ -105,7 +105,7 @@ public:
 
     virtual string get_method_name();
 
-    void write_to_excel(Mat data, ofstream& oFile);
+    void write_to_excel(const Mat& data, ofstream& oFile);
 };
 
 

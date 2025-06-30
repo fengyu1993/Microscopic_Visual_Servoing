@@ -2,14 +2,19 @@
 #include <QDateTime>
 #include <QDebug>
 
-BaslerCameraControl::BaslerCameraControl()
+BaslerCameraControl::BaslerCameraControl(double hz)
 {
     init();
+    fps = hz;
+    this->m_coarseTimer_ = new QTimer();
+    this->m_coarseTimer_->setInterval(1.0 / fps * 1000);
+    this-> m_coarseTimer_->setTimerType(Qt::CoarseTimer);
+    QObject::connect(this->m_coarseTimer_, &QTimer::timeout, this, &BaslerCameraControl::grab);
 }
 
 BaslerCameraControl::~BaslerCameraControl()
 {
-    terminate();
+    this->m_coarseTimer_->stop();
     deleteAll();
 }
 
@@ -42,13 +47,13 @@ bool BaslerCameraControl::init()
 
 }
 
-void BaslerCameraControl::run()
+void BaslerCameraControl::grab()
 {
     // cv::namedWindow("window", cv::WINDOW_AUTOSIZE);
 
-    while(true){
         // qDebug() << "Camera thread ID:" << QThread::currentThreadId();
-        if(m_isOpenAcquire && m_isOpen) {
+        if(m_isOpenAcquire && m_isOpen)
+        {
             QMutexLocker locker(&m_frameMutex);
             GrabImage(this->img_Q);
             if(!this->img_Q.isNull()) {
@@ -60,7 +65,7 @@ void BaslerCameraControl::run()
                 // cv::waitKey(1);
             }
         }
-    }
+
 }
 void BaslerCameraControl::deleteAll()
 {
@@ -215,17 +220,6 @@ int BaslerCameraControl::getGain()
 {
     // if(!m_isOpen) return -1;
     return QString::number(GetCamera(Type_Basler_GainRaw)).toInt();
-}
-
-void BaslerCameraControl::setFrameRate(int value)
-{
-    // if(!m_isOpen) return;
-    SetCamera(Type_Basler_AcquisitionFrameRateAbs, value);
-}
-int BaslerCameraControl::getFrameRate()
-{
-    // if(!m_isOpen) return -1;
-    return QString::number(GetCamera(Type_Basler_AcquisitionFrameRateAbs)).toInt();
 }
 
 
@@ -398,16 +392,16 @@ long BaslerCameraControl::StartAcquire()
         qDebug() << "BaslerCameraControl StartAcquire" << m_currentMode;
         if(m_currentMode == "Freerun")  {
             m_basler.StartGrabbing(GrabStrategy_LatestImageOnly,GrabLoop_ProvidedByInstantCamera);
-            this->start();
+            this->m_coarseTimer_->start();
         } else if(m_currentMode == "Software") {
             m_basler.StartGrabbing(GrabStrategy_LatestImageOnly);
-            this->start();
+            this->m_coarseTimer_->start();
         } else if(m_currentMode == "Line1") {
             m_basler.StartGrabbing(GrabStrategy_OneByOne);
-            this->start();
+            this->m_coarseTimer_->start();
         } else if(m_currentMode == "Line2") {
             m_basler.StartGrabbing(GrabStrategy_OneByOne);
-            this->start();
+            this->m_coarseTimer_->start();
         }
     } catch (GenICam::GenericException &e) {
         qDebug() << e.what();
@@ -422,7 +416,7 @@ long BaslerCameraControl::StopAcquire()
     m_isOpenAcquire = false;
     qDebug() << "BaslerCameraControl StopAcquire";
     try {
-        this->quit();
+        this->m_coarseTimer_->stop();
         if (m_basler.IsGrabbing()) {
             m_basler.StopGrabbing();
         }
@@ -591,12 +585,6 @@ QImage BaslerCameraControl::cvMatToQImage(const cv::Mat& mat)
     }
 }
 
-// cv::Mat BaslerCameraControl::getLatestFrame()
-// {
-
-//     return this->img_vs.clone();
-// }
-
 // 获取帧
 cv::Mat BaslerCameraControl::getLatestFrame() {
     return this->img_vs[m_readIndex.load()].clone();
@@ -607,6 +595,11 @@ void BaslerCameraControl::updateFrame(const cv::Mat& newFrame) {
     int writeIndex = 1 - m_readIndex.load();
     this->img_vs[writeIndex] = newFrame.clone();
     m_readIndex.store(writeIndex);
+}
+
+int BaslerCameraControl::getFrameRate()
+{
+    return this->fps;
 }
 
 

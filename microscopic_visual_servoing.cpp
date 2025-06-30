@@ -265,7 +265,7 @@ string Microscopic_Visual_Servoing::get_date_time()
     return to_string(t);
 }
 
-void Microscopic_Visual_Servoing::write_to_excel(Mat data, ofstream& oFile)
+void Microscopic_Visual_Servoing::write_to_excel(const Mat& data, ofstream& oFile)
 {
     int channels = data.channels();            //获取图像channel
     int nrows = data.rows;                     //矩阵的行数

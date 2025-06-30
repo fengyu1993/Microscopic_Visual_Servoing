@@ -19,7 +19,8 @@ SOURCES += \
     microscopic_visual_servoing.cpp\
     direct_microscopic_visual_servoing.cpp\
     defocus_microscopic_visual_servoing.cpp\
-    MicroscopeCalibration.cpp
+    MicroscopeCalibration.cpp\
+    MediaSaver.cpp
 
 HEADERS += \
     VisualServoingController.h \
@@ -30,7 +31,8 @@ HEADERS += \
     microscopic_visual_servoing.h\
     direct_microscopic_visual_servoing.h\
     defocus_microscopic_visual_servoing.h\
-    MicroscopeCalibration.h
+    MicroscopeCalibration.h\
+    MediaSaver.h
 
 
 FORMS += \
