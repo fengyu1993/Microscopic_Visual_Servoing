@@ -42,6 +42,7 @@ VisualServoingController::VisualServoingController()
     midifyCircle = cv::Mat::zeros(3, 1, CV_64FC1);
     flagRecord = false;
     flagCheckCircle = false;
+    flag_first_VS = false;
 
     bestCircle <<  vs_parameter.resolution_x/2,  vs_parameter.resolution_y/2, vs_parameter.resolution_y / 10.0;
 
@@ -95,6 +96,11 @@ void VisualServoingController::visualServoingControl()
             // 获取最新图像
             m_algorithm_DMVS->image_gray_current_  = m_camera->getLatestFrame();
 
+            if(flag_first_VS)
+            {
+                m_algorithm_DMVS->set_image_gray_initial(m_algorithm_DMVS->image_gray_current_);
+                flag_first_VS = false;
+            }
             // cv::imshow("current", m_algorithm_DMVS->image_gray_current_);
             // cv::imshow("desired", m_algorithm_DMVS->image_gray_desired_);
             // cv::waitKey(1);
@@ -104,7 +110,6 @@ void VisualServoingController::visualServoingControl()
             // 存储数据
             m_algorithm_DMVS->save_all_data(T);
             // 判断是否成功
-            // vs_parameter.max_iteration = 20;
             if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
             {
                 qDebug() << "Visual Servoing Finish";
@@ -439,10 +444,9 @@ void VisualServoingController::startServoing()
 
     // 启动相机采集
     m_camera->StartAcquire();
-    QThread::msleep(1000);
+    QThread::msleep(500);
 
-    Mat image_initial = m_camera->getLatestFrame();
-    m_algorithm_DMVS->set_image_gray_initial(image_initial);
+    flag_first_VS = true;
 
     // 启动控制定时器
     m_controlTimer->start();

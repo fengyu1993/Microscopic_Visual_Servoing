@@ -197,8 +197,14 @@ void Microscopic_Visual_Servoing::write_data()
     // 保存图像
     string saveImage_desired = location + file_name + "_desired_image.png";
     string saveImage_initial = location + file_name + "_initial_image.png";
-    imwrite(saveImage_desired, this->data_vs_.image_gray_desired_*255);
-    imwrite(saveImage_initial, this->data_vs_.image_gray_init_*255);
+    if(!this->data_vs_.image_gray_desired_.empty())
+    {
+        imwrite(saveImage_desired, this->data_vs_.image_gray_desired_*255);
+    }
+    if(!this->data_vs_.image_gray_init_.empty())
+    {
+        imwrite(saveImage_initial, this->data_vs_.image_gray_init_*255);
+    }
     // 保存数据
     ofstream oFile;
     string excel_name = location + file_name + "_data.xls";

@@ -103,6 +103,7 @@ private:
     int cnt;
     int circle_du, circle_dv, circle_dr;
     int mode; // 0: Null; 1: Visual servoing; 2: Sharpness; 3: Microscope Calibration
+    bool flag_first_VS;
     double sharpness;
     Mat midifyCircle;
     bool flagRecord;
