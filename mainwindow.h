@@ -163,6 +163,8 @@ private slots:
 
     void on_Calibration_Step_8_clicked(bool checked);
 
+    void on_Calibration_Step_9_clicked(bool checked);
+
     void on_CheckCircle_clicked();
 
     void on_Clear_uvr_clicked();

@@ -117,9 +117,17 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     // 计算Tbc
     microscopicParameter.Tbc.rowRange(0,3).colRange(0,3) = R_cb.t();
     microscopicParameter.Tbc.rowRange(0,3).col(3) = -R_cb.t() * t_cb;
-    // std::stringstream ss2;
-    // ss2 << microscopicParameter.Tbc;
-    // cout << "Tbc:\n" << ss2.str().c_str();
+    // 计算Rf
+    Mat r_ai = calibrationData.radiusZMoveZ.row(0).clone();
+    Mat Z_i = calibrationData.radiusZMoveZ.row(1).clone();
+    Mat r_npi = microscopicParameter.Z_f * calibrationData.rf / Z_i;
+    Mat r_i = r_ai - r_npi;
+    Mat temp_AA = (microscopicParameter.D_f_k_uv * (1.0 / microscopicParameter.Z_f - 1.0 / Z_i)).t();
+    Mat tamp_bb = r_i.t();
+    Mat AA_pinv;
+    invert(temp_AA, AA_pinv, DECOMP_SVD);
+    Mat Mat_Rf = AA_pinv * tamp_bb;
+    microscopicParameter.R_f = Mat_Rf.at<double>(0,0);
 }
 
 void MicroscopeCalibration::writeCalibrationData(const Calibration_Data& calibrationData)
@@ -170,6 +178,8 @@ void MicroscopeCalibration::writeCalibrationResult(const Microscopic_Parameter& 
     oFile << microscopicParameter.D_f_k_uv << endl;
     oFile << "Z_f" << endl;
     oFile << microscopicParameter.Z_f << endl;
+    oFile << "R_f" << endl;
+    oFile << microscopicParameter.R_f << endl;
     oFile << "Tbc" << endl;
     write_to_excel(microscopicParameter.Tbc, oFile);
     oFile.close();

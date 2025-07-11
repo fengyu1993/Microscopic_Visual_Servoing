@@ -14,7 +14,7 @@ VisualServoingController::VisualServoingController()
 
     this->m_camera = new BaslerCameraControl(20);
 
-    this->m_robot = new  ParallelPlatform(50);
+    this->m_robot = new  ParallelPlatform(20);
     QThread* thread_m_robot = new QThread();
     m_robot->moveToThread(thread_m_robot);
     thread_m_robot->start();
@@ -204,9 +204,11 @@ void VisualServoingController::calibrationControl()
         // qDebug() << "center_r: " << midifyCircle.at<double>(2, 0);
         // 显式标注后的图像
         Point center(cvRound(midifyCircle.at<double>(0, 0)), cvRound(midifyCircle.at<double>(1, 0)));
+        Point center_image(cvRound(image.cols / 2), cvRound(image.rows / 2));
         int radius = cvRound(midifyCircle.at<double>(2, 0) );
         cv::cvtColor(src_8u, src_8u, cv::COLOR_GRAY2BGR);
         circle(src_8u, center, radius, Scalar(0, 255, 0), 3);
+        circle(src_8u, center_image, 2, Scalar(255, 0, 0), 3);
         circle(src_8u, center, 2, Scalar(0, 0, 255), 3);
         // 输出显示
         QImage img =  this->m_camera->cvMatToQImage(src_8u);
@@ -301,7 +303,31 @@ void VisualServoingController::calibrationControl()
             }
             break;
         case 8:
-            // qDebug() << "stepCalibration_8：计算参数";
+            // qDebug() << "stepCalibration_8：将圆心移至图像正中心并记录圆半径";
+            if(this->flagRecord)
+            {
+                m_microscope_calibration->calibrationData.rf = radius;
+                enableflagRecord(false);
+                std::stringstream ss;
+                ss << m_microscope_calibration->calibrationData.rf;
+                qDebug() << "rf:\n" << ss.str().c_str();
+            }
+            break;
+        case 9:
+            // qDebug() << "stepCalibration_9：沿Z轴上下移动并记录圆半径";
+            if(this->flagRecord)
+            {
+                Mat T = m_robot->getTaskMat_cv();
+                Mat radiusZ =  (cv::Mat_<double>(2, 1) << radius, T.at<double>(2, 3));
+                cv::hconcat(m_microscope_calibration->calibrationData.radiusZMoveZ, radiusZ, m_microscope_calibration->calibrationData.radiusZMoveZ);
+                enableflagRecord(false);
+                std::stringstream ss;
+                ss << m_microscope_calibration->calibrationData.radiusZMoveZ;
+                qDebug() << "radiusZMoveZ:\n" << ss.str().c_str();
+            }
+            break;
+        case 10:
+            qDebug() << "stepCalibration_10：计算参数";
             flagFinish = true;
             break;
         default:

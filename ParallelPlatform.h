@@ -71,7 +71,7 @@ private:
 
 private:
     unsigned int ntHandle_;
-    NARPOD_STATUS result_ =  NARPOD_OK;
+    NARPOD_STATUS result_ =  NARPOD_OTHER_ERROR;
     Eigen::Matrix4d b_T_e_;                      //  矩阵 b_T_e 当前位姿
     Eigen::VectorXd current_end_effector_pose_; //  向量 [x;y;z;rx;ry;rz]
     // 以下变量储存轴的

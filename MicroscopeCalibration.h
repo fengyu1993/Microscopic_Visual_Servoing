@@ -15,6 +15,7 @@ struct Microscopic_Parameter{
     double c_v;
     double Z_f;
     double D_f_k_uv;
+    double R_f;
     Mat Tbc = cv::Mat::eye(4, 4, CV_64F);
 };
 
@@ -27,18 +28,22 @@ struct Calibration_Data{
     Mat pointsPXYZMoveXYDn = cv::Mat::zeros(3, 0, CV_64F);
     Mat pointsPuvMoveXYDp = cv::Mat::zeros(2, 0, CV_64F); // 5:   Z轴向下移动后，再沿xy移动采点
     Mat pointsPXYZMoveXYDp = cv::Mat::zeros(3, 0, CV_64F);
-    Mat pointsPuvRotateZD0 = cv::Mat::zeros(2, 0, CV_64F); // 7: 焦平面, 绕Z轴转动并采点
-    Mat pointsPXYZRotateZD0 = cv::Mat::zeros(3, 0, CV_64F);
+    Mat pointsPuvRotateZD0 = cv::Mat::zeros(2, 0, CV_64F); // 7:  焦平面, 绕Z轴转动并采点
     std::vector<cv::Mat> posesTsRotateZD0;
+    Mat pointsPXYZRotateZD0 = cv::Mat::zeros(3, 0, CV_64F);
+    double rf = 0;                                                                           // 8:   将圆心移至图像正中心并记录圆半径
+    Mat radiusZMoveZ = cv::Mat::zeros(2, 0, CV_64F);   // 9:   沿Z轴上下移动并记录圆半径和深度
 };
-// 1:   找到焦平面
-// 2:   沿x移动采点
-// 3:   沿y移动采点
-// 4:   Z轴向上移动后，再沿xy移动采点
-// 5:   Z轴向下移动后，再沿xy移动采点
-// 6:   回到焦平面
-// 7:   绕Z轴转动并采点
-// 8:    计算参数
+    // 1:   找到焦平面
+    // 2:   沿x移动采点
+    // 3:   沿y移动采点
+    // 4:   Z轴向上移动后，再沿xy移动采点
+    // 5:   Z轴向下移动后，再沿xy移动采点
+    // 6:   回到焦平面
+    // 7:   绕Z轴转动并采点
+    // 8:   将圆心移至图像正中心并记录圆半径
+    // 9:   沿Z轴上下移动并记录圆半径和深度
+    // 10: 计算参数
 
 class MicroscopeCalibration
 {

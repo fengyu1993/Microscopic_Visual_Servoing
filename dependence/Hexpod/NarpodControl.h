@@ -1,4 +1,4 @@
-/** ********************************************************************
+﻿/** ********************************************************************
 *
 * @mainpage NarPod API
 *
@@ -61,46 +61,47 @@
     /** @constants ErrorCode */
 
 #define NARPOD_OK                                  0//ok
-#define NARPOD_OTHER_ERROR                         1//��������
-#define NARPOD_SYSTEM_NOT_INITIALIZED_ERROR        2//δ��ʼ��ϵͳ
-#define NARPOD_NO_SYSTEMS_FOUND_ERROR              3//δ�ҵ�ϵͳ
-#define NARPOD_INVALID_PARAMETER_ERROR             4//��Ч����
-#define NARPOD_COMMUNICATION_ERROR                 5//ͨ�Ŵ���
-#define NARPOD_UNKNOWN_PROPERTY_ERROR              6//δ֪���Դ���
-#define NARPOD_RESOURCE_TOO_OLD_ERROR              7//��Դ����
-#define NARPOD_FEATURE_UNAVAILABLE_ERROR           8//���ܲ�����
-#define NARPOD_INVALID_SYSTEM_LOCATOR_ERROR        9//��Чϵͳ��λ��
-#define NARPOD_QUERYBUFFER_SIZE_ERROR              10//��������С����
-#define NARPOD_COMMUNICATION_TIMEOUT_ERROR         11//ͨ�ų�ʱ
-#define NARPOD_DRIVER_ERROR                        12//��������
-#define NARPOD_READ_ERROR                          13//������-
-#define NARPOD_WRITE_ERROR                         14//д����-
-#define NARPOD_INTERNAL_ERROR                      15//δ֪����-
-#define NARPOD_TRANSMIT_ERROR                      16//�������-
-#define NARPOD_TOO_MANY_SYSTEMS_ERROR              17//ϵͳ����-
-#define NARPOD_STATUS_CODE_UNKNOWN_ERROR           500//δ֪״̬��
-#define NARPOD_INVALID_ID_ERROR                    501//��Чid
-#define NARPOD_INITIALIZED_ERROR                   502//��ʼ������
-#define NARPOD_HARDWARE_MODEL_UNKNOWN_ERROR        503//Ӳ���ͺ�δ֪
-#define NARPOD_WRONG_COMM_MODE_ERROR               504//ͨ��ģʽ����
-#define NARPOD_NOT_INITIALIZED_ERROR               505//δ��ʼ��
-#define NARPOD_INVALID_SYSTEM_ID_ERROR             506//��Чϵͳid
-#define NARPOD_NOT_ENOUGH_CHANNELS_ERROR           507//���㹻ͨ��
-#define NARPOD_INVALID_CHANNEL_ERROR               508//��Чͨ��
-#define NARPOD_CHANNEL_USED_ERROR                  509//ͨ����ʹ��
-#define NARPOD_SENSORS_DISABLED_ERROR              510//����������
-#define NARPOD_WRONG_SENSOR_TYPE_ERROR             511//���������ʹ���
-#define NARPOD_SYSTEM_CONFIGURATION_ERROR          512//ϵͳ���ô���
-#define NARPOD_SENSOR_NOT_FOUND_ERROR              513//δ�ҵ�������
-#define NARPOD_STOPPED_ERROR                       514//ֹͣ
-#define NARPOD_BUSY_ERROR                          515//æ
-#define NARPOD_NOT_REFERENCED_ERROR                550//û�вο�
-#define NARPOD_POSE_UNREACHABLE_ERROR              551//���ܴﵽ
-#define NARPOD_COMMAND_OVERRIDDEN_ERROR            552//ָ���
-#define NARPOD_ENDSTOP_REACHED_ERROR               553//�����յ�
-#define NARPOD_NOT_STOPPED_ERROR                   554//����ֹͣ
-#define NARPOD_COULD_NOT_REFERENCE_ERROR           555//����Ѱ��
-#define NARPOD_COULD_NOT_CALIBRATE_ERROR           556//����У׼
+#define NARPOD_OTHER_ERROR                         1//其他错误
+#define NARPOD_SYSTEM_NOT_INITIALIZED_ERROR        2//未初始化系统
+#define NARPOD_NO_SYSTEMS_FOUND_ERROR              3//未找到系统
+#define NARPOD_INVALID_PARAMETER_ERROR             4//无效参数
+#define NARPOD_COMMUNICATION_ERROR                 5//通信错误
+#define NARPOD_UNKNOWN_PROPERTY_ERROR              6//未知属性错误
+#define NARPOD_RESOURCE_TOO_OLD_ERROR              7//资源过期
+#define NARPOD_FEATURE_UNAVAILABLE_ERROR           8//功能不可用
+#define NARPOD_INVALID_SYSTEM_LOCATOR_ERROR        9//无效系统定位器
+#define NARPOD_QUERYBUFFER_SIZE_ERROR              10//缓冲区大小错误
+#define NARPOD_COMMUNICATION_TIMEOUT_ERROR         11//通信超时
+#define NARPOD_DRIVER_ERROR                        12//驱动错误
+#define NARPOD_READ_ERROR                          13//读错误-
+#define NARPOD_WRITE_ERROR                         14//写错误-
+#define NARPOD_INTERNAL_ERROR                      15//未知错误-
+#define NARPOD_TRANSMIT_ERROR                      16//传输错误-
+#define NARPOD_TOO_MANY_SYSTEMS_ERROR              17//系统过多-
+#define NARPOD_STATUS_CODE_UNKNOWN_ERROR           500//未知状态码
+#define NARPOD_INVALID_ID_ERROR                    501//无效id
+#define NARPOD_INITIALIZED_ERROR                   502//初始化错误
+#define NARPOD_HARDWARE_MODEL_UNKNOWN_ERROR        503//硬件型号未知
+#define NARPOD_WRONG_COMM_MODE_ERROR               504//通信模式错误
+#define NARPOD_NOT_INITIALIZED_ERROR               505//未初始化
+#define NARPOD_INVALID_SYSTEM_ID_ERROR             506//无效系统id
+#define NARPOD_NOT_ENOUGH_CHANNELS_ERROR           507//无足够通道
+#define NARPOD_INVALID_CHANNEL_ERROR               508//无效通道
+#define NARPOD_CHANNEL_USED_ERROR                  509//通道被使用
+#define NARPOD_SENSORS_DISABLED_ERROR              510//传感器禁用
+#define NARPOD_WRONG_SENSOR_TYPE_ERROR             511//传感器类型错误
+#define NARPOD_SYSTEM_CONFIGURATION_ERROR          512//系统配置错误
+#define NARPOD_SENSOR_NOT_FOUND_ERROR              513//未找到传感器
+#define NARPOD_STOPPED_ERROR                       514//停止
+#define NARPOD_BUSY_ERROR                          515//忙
+#define NARPOD_NOT_REFERENCED_ERROR                550//没有参考
+#define NARPOD_POSE_UNREACHABLE_ERROR              551//不能达到
+#define NARPOD_COMMAND_OVERRIDDEN_ERROR            552//指令覆盖
+#define NARPOD_ENDSTOP_REACHED_ERROR               553//到达终点
+#define NARPOD_NOT_STOPPED_ERROR                   554//不能停止
+#define NARPOD_COULD_NOT_REFERENCE_ERROR           555//不能寻零
+#define NARPOD_COULD_NOT_CALIBRATE_ERROR           556//不能校准
+
 
 
 /** @endconstants ErrorCode */

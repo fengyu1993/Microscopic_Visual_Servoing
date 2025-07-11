@@ -67,6 +67,7 @@ void MainWindow::initUI()
     ui->Calibration_Step_6->setEnabled(false);
     ui->Calibration_Step_7->setEnabled(false);
     ui->Calibration_Step_8->setEnabled(false);
+    ui->Calibration_Step_9->setEnabled(false);
     // 创建特征误差图表曲线系列
     chartFeatureError = new QChart();
     chartFeatureError->legend()->hide();
@@ -884,12 +885,14 @@ void MainWindow::on_MoveToZero_clicked()
 void MainWindow::on_StartUpdate_clicked()
 {
     this->m_visualServoingController->m_robot->startupdate();
+    ui->FindReferance->setEnabled(false);
 }
 
 
 void MainWindow::on_StopUpdate_clicked()
 {
     this->m_visualServoingController->m_robot->stopupdate();
+    ui->FindReferance->setEnabled(true);
 }
 
 
@@ -1084,12 +1087,27 @@ void MainWindow::on_Calibration_Step_7_clicked(bool checked)
 void MainWindow::on_Calibration_Step_8_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第八步：计算参数");
+        QMessageBox::information(nullptr, "Calibration", "第八步：将圆心移至图像正中心并记录圆半径");
         ui->Calibration_Step_8->setText("Finish");
         this->m_visualServoingController->setStepCalibration(8);
     }
     else{
         ui->Calibration_Step_8->setEnabled(false);
+        ui->Calibration_Step_9->setEnabled(true);
+    }
+}
+
+void MainWindow::on_Calibration_Step_9_clicked(bool checked)
+{
+    if(checked){
+        QMessageBox::information(nullptr, "Calibration", "第九步：沿Z轴上下移动并记录圆半径和深度");
+        ui->Calibration_Step_9->setText("Finish");
+        this->m_visualServoingController->setStepCalibration(9);
+    }
+    else{
+        QMessageBox::information(nullptr, "Calibration", "计算参数");
+        this->m_visualServoingController->setStepCalibration(10);
+        ui->Calibration_Step_9->setEnabled(false);
     }
 }
 
@@ -1169,5 +1187,6 @@ void MainWindow::on_MoveToDesiredPose_clicked()
     Eigen::VectorXd L = this->m_visualServoingController->m_robot->getList(poses.desiredPose);
     this->m_visualServoingController->m_robot->setTargetPose(L);
 }
+
 
 

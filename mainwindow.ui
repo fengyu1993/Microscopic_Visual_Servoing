@@ -502,6 +502,9 @@
          <property name="text">
           <string>FindReferance</string>
          </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>
@@ -998,6 +1001,16 @@ border-width: 2px</string>
         <widget class="QPushButton" name="Calibration_Step_8">
          <property name="text">
           <string>Step 8</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QPushButton" name="Calibration_Step_9">
+         <property name="text">
+          <string>Step 9</string>
          </property>
          <property name="checkable">
           <bool>true</bool>

@@ -49,10 +49,10 @@ DEPENDPATH += $$PWD/dependence/pylon/lib/x64
 win32: LIBS += -L$$PWD/dependence/pylon/lib/x64/ -lGCBase_MD_VC141_v3_1_Basler_pylon -lGenApi_MD_VC141_v3_1_Basler_pylon -lgxapi_v15 -lPylonBase_v9 -lPylonC_v9 -lPylonDataProcessing_v3 -lPylonGUI_v9 -lPylonUtility_v9 -luxapi_v14 -luxtopapi_v9
 
 # NarPod
-INCLUDEPATH += $$PWD/dependence/NarpodSDK-1.0.12
-win32: LIBS += -L$$PWD/dependence/NarpodSDK-1.0.12/64/ -lNarpodControl
-INCLUDEPATH += $$PWD/dependence/NarpodSDK-1.0.12/64
-DEPENDPATH += $$PWD/dependence/NarpodSDK-1.0.12/64
+INCLUDEPATH += $$PWD/dependence/Hexpod
+win32: LIBS += -L$$PWD/dependence/Hexpod/X64/ -lNarpodControl
+INCLUDEPATH += $$PWD/dependence/Hexpod/X64
+DEPENDPATH += $$PWD/dependence/Hexpod/X64
 
 # opencv
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/dependence/opencv/x64/vc15/lib/ -lopencv_world451

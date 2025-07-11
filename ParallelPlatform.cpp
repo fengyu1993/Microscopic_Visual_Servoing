@@ -15,7 +15,6 @@ ParallelPlatform::ParallelPlatform(double hz)
     this-> m_preciseTimer_->setTimerType(Qt::PreciseTimer);
     QObject::connect(this->m_preciseTimer_, &QTimer::timeout, this, &ParallelPlatform::controller);
 
-
     this->positionx_ = 0;
     this->positiony_ = 0;
     this-> positionz_ = 0;
@@ -62,6 +61,8 @@ void ParallelPlatform::controller()
     // qDebug() << "elapsed: " << cycleTimer.elapsed();
     // qDebug() << "controlMode: " << this->controlMode_;
 
+    update();
+
     if(this->controlMode_ == 0){
         targetPose_ = currentPose_Vec_;
         if (targetVelocity_.head(3).norm() <   epsilon_v_ && targetVelocity_.tail(3).norm()  < epsilon_w_)
@@ -88,15 +89,14 @@ void ParallelPlatform::controller()
         this->targetVelocity_ = Eigen::VectorXd::Zero(6);
         moveAbsolute(0,0,0,0,0,0);
     }
-    update();
+
 }
 
 bool ParallelPlatform::connect()
 {
     // 先调用NTS startactivate才能运动
-    // updateTimer_->start();
-    result_ = Narpod_Open(&ntHandle_, "usb:id:1234567895", "1");
-    // QTimer::singleShot();
+    // result_ = Narpod_Open(&ntHandle_, "usb:id:9876543210", "1");
+    result_ = Narpod_Open(&ntHandle_, "usb:ix:0", "1");
     result_ = Narpod_Set_Property(ntHandle_, HardwareModel, MODEL_HEXAPOD70U);
     result_ = Narpod_Set_Property(ntHandle_, PIVOT_MODE, PIVOT_FIXED);
     // result_ = Narpod_Set_Property(ntHandle_, PIVOT_MODE, PIVOT_RELATIVE);
@@ -132,7 +132,10 @@ bool ParallelPlatform::disconnect()
 
 bool ParallelPlatform::findReferance()
 {
+    result_ = NARPOD_OTHER_ERROR;
+    qDebug() << "findReferance start: " << result_;
     result_ = Narpod_FindReferenceMarks(ntHandle_);
+    qDebug() << "findReferance end: "  << result_;
     bool res = checkresult();
     if (res)
     {
@@ -159,7 +162,6 @@ bool ParallelPlatform::findReferance()
 bool ParallelPlatform::startupdate()
 {
     this->m_preciseTimer_->start();
-    // this->cycleTimer.start();
     return 1;
 }
 
@@ -202,7 +204,10 @@ bool ParallelPlatform::moveAbsolute(signed int x,signed int y,signed int z,
     // }
     // else
     // {
+
         result_ = Narpod_Move(ntHandle_,x,y,z,rx,ry,rz);
+        result_ = Narpod_GetPosition(ntHandle_,&positionx_,&positiony_,&positionz_,&rotationx_,&rotationy_,&rotationz_);
+
         currentPose_Vec_(0)=x;currentPose_Vec_(1)=y;currentPose_Vec_(2)=z;
         currentPose_Vec_(3)=rx;currentPose_Vec_(4)=ry;currentPose_Vec_(5)=rz;
         currentPose_Mat_ = getT(currentPose_Vec_);

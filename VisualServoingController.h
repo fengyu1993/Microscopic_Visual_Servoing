@@ -110,14 +110,17 @@ private:
     bool flagCheckCircle;
     RobotPoses robotPoses;
     Vec3f bestCircle;
-    int stepCalibration; // 1:   找到焦平面
+    int stepCalibration;
+        // 1:   找到焦平面
         // 2:   沿x移动采点
         // 3:   沿y移动采点
         // 4:   Z轴向上移动后，再沿xy移动采点
         // 5:   Z轴向下移动后，再沿xy移动采点
         // 6:   回到焦平面
         // 7:   绕Z轴转动并采点
-        // 8:    计算参数
+        // 8:   将圆心移至图像正中心并记录圆半径
+        // 9:   沿Z轴上下移动并记录圆半径和深度
+        // 10: 计算参数
     void executeControlCycle();
 };
 
