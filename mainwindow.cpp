@@ -989,7 +989,7 @@ void MainWindow::on_circle_dr_n_clicked()
 void MainWindow::on_Calibration_Step_1_clicked(bool checked)
 {
     if(checked){
-        QMessageBox::information(nullptr, "Calibration", "第一步：请找到焦平面");
+        QMessageBox::information(nullptr, "Calibration", "第一步：请找到焦平面并记录");
         ui->Calibration_Step_1->setText("Finish");
         this->m_visualServoingController->setStepCalibration(1);
     }

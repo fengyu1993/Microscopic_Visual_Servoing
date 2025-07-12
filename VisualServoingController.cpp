@@ -338,12 +338,11 @@ void VisualServoingController::calibrationControl()
         {
             m_microscope_calibration->writeCalibrationData(m_microscope_calibration->calibrationData);
             m_microscope_calibration->calibration(m_microscope_calibration->calibrationData, m_microscope_calibration->microscopicParameter);
+            // 输出数据
             m_microscope_calibration->writeCalibrationResult(m_microscope_calibration->microscopicParameter);
             flagFinish = false;
             setStepCalibration(0);
         }
-        // 输出数据
-
     }
 }
 

@@ -34,6 +34,7 @@ struct Calibration_Data{
     double rf = 0;                                                                           // 8:   将圆心移至图像正中心并记录圆半径
     Mat radiusZMoveZ = cv::Mat::zeros(2, 0, CV_64F);   // 9:   沿Z轴上下移动并记录圆半径和深度
 };
+    // 单位：nm
     // 1:   找到焦平面
     // 2:   沿x移动采点
     // 3:   沿y移动采点
