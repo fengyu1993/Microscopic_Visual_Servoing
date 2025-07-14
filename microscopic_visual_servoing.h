@@ -40,8 +40,8 @@ public:
     struct data
     {
         Mat velocity_;
-        Mat pose_; // 平移+四元数wxyz
-        Mat pose_desired_; // 平移+四元数wxyz
+        Mat pose_;
+        Mat pose_desired_;
         Mat error_feature_;
         Mat image_gray_init_;
         Mat image_gray_desired_;

@@ -92,7 +92,10 @@ void VisualServoingController::visualServoingControl()
             // 获取执行器位姿
             Mat T = m_robot->getTaskMat_cv();
             // 更新平面参数
-            m_algorithm_DMVS->updeta_planar_paramters(0, 0, 1.0/vs_parameter.camera_parameters.Z_f);
+            Mat T_co =  vs_parameter.Tbc * T;
+            Mat plame_para;
+            cv::divide(T_co(cv::Rect(2, 0, 1, 3)), T_co(cv::Rect(2, 0, 1, 3)).t() * T_co(cv::Rect(3, 0, 1, 3)), plame_para);
+            m_algorithm_DMVS->updeta_planar_paramters(plame_para.at<double>(0,0), plame_para.at<double>(1,0), plame_para.at<double>(2,0));
             // 获取最新图像
             m_algorithm_DMVS->image_gray_current_  = m_camera->getLatestFrame();
 
@@ -514,6 +517,9 @@ void VisualServoingController::output_vs_parameter()
     ss1 << vs_parameter.Tbc;
     qDebug() << "Tbc:\n" << ss1.str().c_str();
     ss1.str("");
+    ss1 << vs_parameter.Tcb;
+    qDebug() << "Tcb:\n" << ss1.str().c_str();
+    ss1.str("");
     ss1 << vs_parameter.pose_desired;
     qDebug() << "pose_desired:\n" << ss1.str().c_str();
     ss1.str("");
@@ -790,7 +796,10 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                     qWarning() << "Warning: Invalid matrix row format. Expected 4 elements for line:" << line << " after comma handling. Matrix parsing aborted. Using default.";
                     currentState = ReadingGeneral; // Reset state
                     if (currentState == ReadingPoseDesired) vs_parameter.pose_desired = cv::Mat::eye(4,4,CV_64F); // Reset to default
-                    else if (currentState == ReadingTbc) vs_parameter.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                    else if (currentState == ReadingTbc) {
+                        vs_parameter.Tbc = cv::Mat::eye(4,4,CV_64F); // Reset to default
+                        vs_parameter.Tcb = cv::Mat::eye(4,4,CV_64F);
+                    }
                     else if (currentState == ReadingWorkDesired) vs_parameter.pose_work = cv::Mat::eye(4,4,CV_64F); // Reset to default
                     overall_success = false; // Indicate a problem during parsing
                     continue; // Skip current malformed line
@@ -821,6 +830,11 @@ bool VisualServoingController::read_vs_parameter(QString location) {
                     } else if (currentState == ReadingTbc) {
                         vs_parameter.Tbc = currentMatrix.clone(); // Assign the parsed matrix
                         qDebug() << "Successfully parsed Tbc matrix.";
+                        vs_parameter.Tcb = cv::Mat::eye(4,4,CV_64F);
+                        cv::Mat invR = vs_parameter.Tbc(cv::Rect(0, 0, 3, 3)).t();  // 旋转矩阵的逆等于其转置
+                        cv::Mat invt = -invR * vs_parameter.Tbc(cv::Rect(3, 0, 1, 3));
+                        invR.copyTo(vs_parameter.Tcb(cv::Rect(0, 0, 3, 3)));
+                        invt.copyTo(vs_parameter.Tcb(cv::Rect(3, 0, 1, 3)));
                     }
                     currentState = ReadingGeneral; // Reset state
                 }

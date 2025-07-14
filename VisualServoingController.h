@@ -40,6 +40,7 @@ struct VS_Parameter {
     Mat pose_desired;
     Mat pose_work;
     Mat Tbc;
+    Mat Tcb;
     int max_iteration;
     bool is_initialized = false;
 };
