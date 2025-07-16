@@ -64,7 +64,6 @@ Mat Microscopic_Visual_Servoing::get_object_velocity()
     Mat L_e_transpose = this->L_e_.t();
     Mat L_e_left_inverse = (L_e_transpose * this->L_e_ + 1e-6*Mat::eye(6, 6, CV_64F)).inv() * L_e_transpose;
     Mat velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
-
     // velocity = (Mat_<double>(6, 1) << 0, 0, 0, 0, 0, 0.005); // μm/s,  °/s
     this->object_velocity_ = this->Ad_Tbc_ * velocity;
     return this->object_velocity_;

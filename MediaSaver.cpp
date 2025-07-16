@@ -160,10 +160,42 @@ cv::Mat MediaSaver::qImageToCvMat(const QImage& qimage) {
         // For OpenCV, CV_8UC4 with QImage::Format_RGB32 often means BGRA or RGBA.
         // It's generally safe to map RGB32 directly to CV_8UC4.
         return cv::Mat(processedImage.height(), processedImage.width(), CV_8UC4, (void*)processedImage.constBits(), processedImage.bytesPerLine()).clone();
-    case QImage::Format_RGB888: // In QImage, this is BGR (on little-endian systems)
-        return cv::Mat(processedImage.height(), processedImage.width(), CV_8UC3, (void*)processedImage.constBits(), processedImage.bytesPerLine()).clone();
+    case QImage::Format_RGB888: {// In QImage, this is BGR (on little-endian systems)
+        cv::Mat mat(processedImage.height(), processedImage.width(), CV_8UC3,
+                    const_cast<uchar*>(processedImage.bits()),
+                    static_cast<size_t>(processedImage.bytesPerLine()));
+        cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
+        return mat.clone();
+    }
     case QImage::Format_Grayscale8:
         return cv::Mat(processedImage.height(), processedImage.width(), CV_8UC1, (void*)processedImage.constBits(), processedImage.bytesPerLine()).clone();
+    case  QImage::Format_Indexed8: {
+        cv::Mat mat(processedImage.height(), processedImage.width(), CV_8UC1,
+                    const_cast<uchar*>(processedImage.bits()),
+                    processedImage.bytesPerLine());
+        cv::Mat image;
+        if (processedImage.colorTable().isEmpty()) {
+            image =  mat.clone();
+        }
+        else{
+            // 预计算调色板（BGR顺序）
+            std::vector<cv::Vec3b> palette;
+            for (QRgb rgb : processedImage.colorTable()) {
+                palette.emplace_back(cv::Vec3b(qBlue(rgb), qGreen(rgb), qRed(rgb)));
+            }
+
+            // 应用调色板
+            image =cv::Mat(mat.size(), CV_8UC3);
+            for (int y = 0; y < mat.rows; ++y) {
+                const uchar* src = mat.ptr<uchar>(y);
+                cv::Vec3b* dst = image.ptr<cv::Vec3b>(y);
+                for (int x = 0; x < mat.cols; ++x) {
+                    dst[x] = palette[src[x]];
+                }
+            }
+        }
+        return image.clone();
+    }
     default:
         // This case should ideally not be reached after the initial conversion attempt
         qWarning() << "Error: Unhandled QImage format" << processedImage.format() << "after conversion attempt.";

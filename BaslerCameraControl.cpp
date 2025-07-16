@@ -6,15 +6,16 @@ BaslerCameraControl::BaslerCameraControl(double hz)
 {
     init();
     fps = hz;
-    this->m_coarseTimer_ = new QTimer();
-    this->m_coarseTimer_->setInterval(1.0 / fps * 1000);
-    this-> m_coarseTimer_->setTimerType(Qt::CoarseTimer);
-    QObject::connect(this->m_coarseTimer_, &QTimer::timeout, this, &BaslerCameraControl::grab);
+    flagSaveDesiredImage = false;
+    this->m_coarseTimer = new QTimer();
+    this->m_coarseTimer->setInterval(1.0 / fps * 1000);
+    this-> m_coarseTimer->setTimerType(Qt::CoarseTimer);
+    QObject::connect(this->m_coarseTimer, &QTimer::timeout, this, &BaslerCameraControl::grab);
 }
 
 BaslerCameraControl::~BaslerCameraControl()
 {
-    this->m_coarseTimer_->stop();
+    this->m_coarseTimer->stop();
     deleteAll();
 }
 
@@ -49,8 +50,7 @@ bool BaslerCameraControl::init()
 
 void BaslerCameraControl::grab()
 {
-    // cv::namedWindow("window", cv::WINDOW_AUTOSIZE);
-
+        // cv::namedWindow("window", cv::WINDOW_AUTOSIZE);
         // qDebug() << "Camera thread ID:" << QThread::currentThreadId();
         if(m_isOpenAcquire && m_isOpen)
         {
@@ -60,8 +60,17 @@ void BaslerCameraControl::grab()
                 emit sigCurrentImage(this->img_Q);
                 cv::Mat img;
                 qImageToCvMat(this->img_Q, img);
+                if(flagSaveDesiredImage)
+                {
+                    saveDesiredImage(img);
+                    this->enableSaveDesiredImage(false);
+                }
+                if(img.channels() == 3){
+                    cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
+                }
+                img.convertTo(img, CV_64F, 1.0/255.0);
                 updateFrame(img);
-                // cv::imshow("window", this->img_cv);
+                // cv::imshow("window", getLatestFrame());
                 // cv::waitKey(1);
             }
         }
@@ -113,7 +122,7 @@ void BaslerCameraControl::UpdateCameraList()
     emit sigCameraUpdate(m_cameralist);
 }
 
-void BaslerCameraControl::CopyToImage(CGrabResultPtr pInBuffer, QImage &OutImage)
+void BaslerCameraControl::CopyMono8ToQImage(CGrabResultPtr pInBuffer, QImage &OutImage)
 {
     uchar* buff = (uchar*)pInBuffer->GetBuffer();
     int nHeight = pInBuffer->GetHeight();
@@ -139,6 +148,32 @@ void BaslerCameraControl::CopyToImage(CGrabResultPtr pInBuffer, QImage &OutImage
             memcpy( OutImage.bits(), buff, nWidth * nHeight );
         }
     }
+}
+
+void BaslerCameraControl::CopyBayerRG8ToQImage(CGrabResultPtr pInBuffer, QImage &OutImage)
+{
+    uchar* buff = (uchar*)pInBuffer->GetBuffer();
+    int nHeight = pInBuffer->GetHeight();
+    int nWidth = pInBuffer->GetWidth();
+
+    if(m_size != QSize(nWidth, nHeight)) {
+        m_size = QSize(nWidth, nHeight);
+        emit sigSizeChange(m_size);
+    }
+
+    // 创建 OpenCV Mat 来处理 Bayer 数据
+    cv::Mat bayerMat(nHeight, nWidth, CV_8UC1, buff);
+    cv::Mat rgbMat;
+
+    // 将 Bayer RG8 转换为 RGB
+    cv::cvtColor(bayerMat, rgbMat, cv::COLOR_BayerRG2BGR);
+
+    // 转换为 QImage
+    OutImage = QImage(rgbMat.data,
+                      rgbMat.cols,
+                      rgbMat.rows,
+                      rgbMat.step,
+                      QImage::Format_RGB888).copy();
 }
 
 int BaslerCameraControl::openCamera(QString cameraName)
@@ -392,16 +427,16 @@ long BaslerCameraControl::StartAcquire()
         qDebug() << "BaslerCameraControl StartAcquire" << m_currentMode;
         if(m_currentMode == "Freerun")  {
             m_basler.StartGrabbing(GrabStrategy_LatestImageOnly,GrabLoop_ProvidedByInstantCamera);
-            this->m_coarseTimer_->start();
+            this->m_coarseTimer->start();
         } else if(m_currentMode == "Software") {
             m_basler.StartGrabbing(GrabStrategy_LatestImageOnly);
-            this->m_coarseTimer_->start();
+            this->m_coarseTimer->start();
         } else if(m_currentMode == "Line1") {
             m_basler.StartGrabbing(GrabStrategy_OneByOne);
-            this->m_coarseTimer_->start();
+            this->m_coarseTimer->start();
         } else if(m_currentMode == "Line2") {
             m_basler.StartGrabbing(GrabStrategy_OneByOne);
-            this->m_coarseTimer_->start();
+            this->m_coarseTimer->start();
         }
     } catch (GenICam::GenericException &e) {
         qDebug() << e.what();
@@ -416,7 +451,7 @@ long BaslerCameraControl::StopAcquire()
     m_isOpenAcquire = false;
     qDebug() << "BaslerCameraControl StopAcquire";
     try {
-        this->m_coarseTimer_->stop();
+        this->m_coarseTimer->stop();
         if (m_basler.IsGrabbing()) {
             m_basler.StopGrabbing();
         }
@@ -450,10 +485,15 @@ long BaslerCameraControl::GrabImage(QImage &image, int timeout)
             EPixelType pixelType = ptrGrabResult->GetPixelType();
             switch (pixelType) {
             case PixelType_Mono8: {
-                CopyToImage(ptrGrabResult, image);
+                CopyMono8ToQImage(ptrGrabResult, image);
             } break;
-            case PixelType_BayerRG8: { qDebug() << "what: PixelType_BayerRG8"; }  break;
-            default:  qDebug() << "what: default"; break;
+            case PixelType_BayerRG8: {
+                CopyBayerRG8ToQImage(ptrGrabResult, image);
+            } break;
+            default:
+                qDebug() << "Unsupported pixel format:" << pixelType;
+                return -4;
+                break;
             }
         } else {
             // OutputDebugString(L"Grab Error!!!");
@@ -470,14 +510,27 @@ long BaslerCameraControl::GrabImage(QImage &image, int timeout)
     return 0;
 }
 
-cv::Mat BaslerCameraControl::saveDesiredImage()
+void BaslerCameraControl::enableSaveDesiredImage(bool flag)
 {
-    cv::Mat img_64f = getLatestFrame();
-    cv::Mat img_8u;
-    img_64f.convertTo(img_8u, CV_8UC1, 255.0);
-    // 存储
-    cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", img_8u);
-    return img_64f;
+    this->flagSaveDesiredImage = flag;
+}
+
+void BaslerCameraControl::saveDesiredImage(const cv::Mat& img)
+{
+    this->image_desired_color = img.clone();
+    cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", this->image_desired_color);
+    cv::Mat img_gray;
+    if(img.channels() == 3){
+        cv::cvtColor(img, img_gray, cv::COLOR_BGR2GRAY);
+    }else{
+        img_gray = img.clone();
+    }
+    img_gray.convertTo(this->image_desired, CV_64F, 1.0/255.0);
+}
+
+cv::Mat&  BaslerCameraControl::getDesiredImage()
+{
+    return this->image_desired;
 }
 
 //Qimage 与 cv mat转换
@@ -486,27 +539,26 @@ void BaslerCameraControl::qImageToCvMat(const QImage& qImage, cv::Mat & image)
     switch (qImage.format()) {
     case QImage::Format_RGB32:
     case QImage::Format_ARGB32:
-    case QImage::Format_ARGB32_Premultiplied: {
-        // 将QImage的32位格式转换为BGR三通道
-        cv::Mat mat(qImage.height(), qImage.width(), CV_8UC4,
-                    const_cast<uchar*>(qImage.bits()),
-                    static_cast<size_t>(qImage.bytesPerLine()));
-        cv::cvtColor(mat, image, cv::COLOR_BGRA2BGR); // 正确转换颜色通道
-    }
+    case QImage::Format_ARGB32_Premultiplied:
     case QImage::Format_RGB888: {
         // 转换RGB888到BGR格式
+        // qDebug() << "Format_RGB888";
         cv::Mat mat(qImage.height(), qImage.width(), CV_8UC3,
                     const_cast<uchar*>(qImage.bits()),
                     static_cast<size_t>(qImage.bytesPerLine()));
         cv::cvtColor(mat, image, cv::COLOR_RGB2BGR); // 修正颜色顺序
+        break;
     }
     case QImage::Format_Grayscale8: {
+         // qDebug() << "Format_Grayscale8";
         // 直接复制灰度图像数据
         image = cv::Mat(qImage.height(), qImage.width(), CV_8UC1,
                     const_cast<uchar*>(qImage.bits()),
                     static_cast<size_t>(qImage.bytesPerLine()));
+         break;
     }
     case QImage::Format_Indexed8: {
+        // qDebug() << "Format_Indexed8";
         cv::Mat mat(qImage.height(), qImage.width(), CV_8UC1,
                     const_cast<uchar*>(qImage.bits()),
                     qImage.bytesPerLine());
@@ -536,8 +588,6 @@ void BaslerCameraControl::qImageToCvMat(const QImage& qImage, cv::Mat & image)
     default:
         qWarning() << "Unsupported QImage format:" << qImage.format();
     }
-
-    image.convertTo(image, CV_64F, 1.0/255.0);
 }
 
 // cv::Mat转QImage实现

@@ -230,7 +230,6 @@ void MainWindow::updateVisualServoingImage(QImage img)
         {
             this->m_mediaSaver->addFrame(img);
         }
-
         QPixmap pix = QPixmap::fromImage(img);
         ui->label_pic->setPixmap(pix.scaled(ui->label_pic->size(), Qt::KeepAspectRatio));
 
@@ -303,10 +302,11 @@ void MainWindow::initializeSystem()
 
  void MainWindow::displayDesiredImage()
  {
-     QImage image_desried = m_visualServoingController->m_camera->cvMatToQImage
-                     (m_visualServoingController->m_algorithm_DMVS->get_image_desired());
+     QString imagePath = m_visualServoingController->vs_parameter.resource_location +"/" + m_visualServoingController->vs_parameter.image_desired_name;
+     Mat image_desired = imread(imagePath.toStdString(), cv::IMREAD_UNCHANGED);
+     QImage image_desried = m_visualServoingController->m_camera->cvMatToQImage(image_desired);
      QPixmap pixmap = QPixmap::fromImage(image_desried);
-    ui->label_pic_desired->setPixmap(pixmap.scaled(ui->label_pic_desired->size(), Qt::KeepAspectRatio));
+     ui->label_pic_desired->setPixmap(pixmap.scaled(ui->label_pic_desired->size(), Qt::KeepAspectRatio));
  }
 
 void MainWindow::onSystemStart()
@@ -907,8 +907,9 @@ void MainWindow::on_SaveDesiredImage_clicked()
 {
     if(this->m_visualServoingController->m_camera->isOpen())
     {
-        cv::Mat img_64f = this->m_visualServoingController->m_camera->saveDesiredImage();
-        this->m_visualServoingController->m_algorithm_DMVS->set_image_gray_desired(img_64f);
+        this->m_visualServoingController->m_camera->enableSaveDesiredImage(true);
+        this->m_visualServoingController->m_algorithm_DMVS->set_image_gray_desired(
+                                        this->m_visualServoingController->m_camera->getDesiredImage());
         displayDesiredImage();
     }
     else{

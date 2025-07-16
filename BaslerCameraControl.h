@@ -66,8 +66,10 @@ public:
     QImage cvMatToQImage(const cv::Mat& mat);
     std::shared_ptr<const cv::Mat> getLatestFrameShared() const;
     cv::Mat getLatestFrame();
-    cv::Mat saveDesiredImage();
+    void saveDesiredImage(const cv::Mat& img);
     void updateFrame(const cv::Mat& newFrame);
+    void enableSaveDesiredImage(bool flag);
+    cv::Mat& getDesiredImage();
 
 signals:
     void sigCameraUpdate(QStringList list);
@@ -77,7 +79,8 @@ signals:
 
 private:
     void UpdateCameraList();
-    void CopyToImage(CGrabResultPtr pInBuffer, QImage &OutImage);
+    void CopyMono8ToQImage(CGrabResultPtr pInBuffer, QImage &OutImage);
+    void CopyBayerRG8ToQImage(CGrabResultPtr pInBuffer, QImage &OutImage);
 
 private:
     CBaslerUniversalInstantCamera m_basler;
@@ -87,8 +90,11 @@ private:
     bool m_isOpen = false; // 是否打开摄像头
     QSize m_size;
     mutable QMutex m_frameMutex;
-    QTimer *m_coarseTimer_;
+    QTimer *m_coarseTimer;
     int fps;
+    bool flagSaveDesiredImage;
+    cv::Mat image_desired;
+    cv::Mat image_desired_color;
 
 public:
     QImage img_Q;
