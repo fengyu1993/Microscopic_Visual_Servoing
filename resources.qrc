@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/data/VS_Parameter.csv</file>
+        <file>resources/data/image_desired.png</file>
+    </qresource>
+</RCC>
