@@ -3,7 +3,7 @@
 VisualServoingController::VisualServoingController()
 {
 
-    if(read_vs_parameter("E:/QT/Microscopic_Visual_Servoing/resources/data/VS_Parameter.csv")){
+    if(read_vs_parameter(":/resources/data/VS_Parameter.csv")){
         output_vs_parameter();
         this->robotPoses.workPose = cvMatToEigenMatrix(vs_parameter.pose_work);
         this->robotPoses.desiredPose = cvMatToEigenMatrix(vs_parameter.pose_desired);
@@ -184,7 +184,7 @@ void VisualServoingController::calibrationControl()
         Mat T = m_robot->getTaskMat_cv();
         // 获取图像
         Mat image  = m_camera->getLatestFrame();
-        // Mat image = imread("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png");
+        // Mat image = imread(":/resources/data/image_desired.png");
         // 检测圆
         Mat src_8u;
         image.convertTo(src_8u, CV_8U, 255.0);
