@@ -68,8 +68,7 @@ public:
     cv::Mat getLatestFrame();
     void saveDesiredImage(const cv::Mat& img);
     void updateFrame(const cv::Mat& newFrame);
-    void enableSaveDesiredImage(bool flag);
-    cv::Mat& getDesiredImage();
+    cv::Mat& getImage();
 
 signals:
     void sigCameraUpdate(QStringList list);
@@ -92,12 +91,12 @@ private:
     mutable QMutex m_frameMutex;
     QTimer *m_coarseTimer;
     int fps;
-    bool flagSaveDesiredImage;
-    cv::Mat image_desired;
-    cv::Mat image_desired_color;
+
 
 public:
     QImage img_Q;
+    cv::Mat img_gray;
+    cv::Mat img;
     cv::Mat img_vs[2];
     std::atomic<int> m_readIndex{0};
 };

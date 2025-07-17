@@ -184,7 +184,8 @@ void MainWindow::updateSystemStatus(const QString &status)
     ui->label_SystemStatus->setText(status);
     if (status == VS_SUCCESS)
     {
-        QString name = "visualServoingVideo";
+        string date_time = m_visualServoingController->m_algorithm_DMVS->get_date_time();
+        QString name = QString::fromStdString(date_time) + "_visualServoingVideo";
         QString location = LOCATION;
         QString videoPath = location + name + ".avi";
         qDebug() << videoPath;
@@ -907,9 +908,10 @@ void MainWindow::on_SaveDesiredImage_clicked()
 {
     if(this->m_visualServoingController->m_camera->isOpen())
     {
-        this->m_visualServoingController->m_camera->enableSaveDesiredImage(true);
-        this->m_visualServoingController->m_algorithm_DMVS->set_image_gray_desired(
-                                        this->m_visualServoingController->m_camera->getDesiredImage());
+        Mat img = this->m_visualServoingController->m_camera->getImage();
+        this->m_visualServoingController->m_algorithm_DMVS->set_image_desired(img);
+        QString imagePath = m_visualServoingController->vs_parameter.resource_location +"/" + m_visualServoingController->vs_parameter.image_desired_name;
+        cv::imwrite(imagePath.toStdString(), img);
         displayDesiredImage();
     }
     else{

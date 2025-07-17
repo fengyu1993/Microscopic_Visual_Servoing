@@ -52,8 +52,8 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     vconcat(std::vector<cv::Mat>{A_D0, A_Dp, A_Dn}, A);
     vconcat(std::vector<cv::Mat>{b_D0, b_Dp, b_Dn}, b);
    Mat X_Df_Zf = (A.t() * A).inv() * A.t() * b;
-    microscopicParameter.D_f_k_uv = X_Df_Zf.at<double>(0,0) / 1000.0;
-    microscopicParameter.Z_f = X_Df_Zf.at<double>(1,0) / 1000.0; // 单位：μm
+    microscopicParameter.D_f_k_uv = X_Df_Zf.at<double>(0,0);
+    microscopicParameter.Z_f = X_Df_Zf.at<double>(1,0); // 单位：nm
     // 计算rx
     repeat(calibrationData.pointsPuvMoveXD0.col(0), 1, calibrationData.pointsPuvMoveXD0.cols-1, col1_repeated);
     Mat delta_Puv_MoveXD0 = calibrationData.pointsPuvMoveXD0.colRange(1, calibrationData.pointsPuvMoveXD0.cols) - col1_repeated;
@@ -112,7 +112,7 @@ void MicroscopeCalibration::calibration(const Calibration_Data& calibrationData,
     }
     Mat A_t_cb_pinv;
     invert(A_t_cb, A_t_cb_pinv, DECOMP_SVD);
-    Mat t_cb = A_t_cb_pinv * b_t_cb / 1000.0;  // 单位：μm
+    Mat t_cb = A_t_cb_pinv * b_t_cb;  // 单位：nm
     t_cb.at<double>(2, 0) = microscopicParameter.Z_f;
     // 计算Tbc
     microscopicParameter.Tbc.rowRange(0,3).colRange(0,3) = R_cb.t();

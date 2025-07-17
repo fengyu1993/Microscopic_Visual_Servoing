@@ -6,7 +6,6 @@ BaslerCameraControl::BaslerCameraControl(double hz)
 {
     init();
     fps = hz;
-    flagSaveDesiredImage = false;
     this->m_coarseTimer = new QTimer();
     this->m_coarseTimer->setInterval(1.0 / fps * 1000);
     this-> m_coarseTimer->setTimerType(Qt::CoarseTimer);
@@ -58,18 +57,16 @@ void BaslerCameraControl::grab()
             GrabImage(this->img_Q);
             if(!this->img_Q.isNull()) {
                 emit sigCurrentImage(this->img_Q);
-                cv::Mat img;
                 qImageToCvMat(this->img_Q, img);
-                if(flagSaveDesiredImage)
-                {
-                    saveDesiredImage(img);
-                    this->enableSaveDesiredImage(false);
-                }
                 if(img.channels() == 3){
-                    cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
+                    cv::cvtColor(img, img_gray, cv::COLOR_BGR2GRAY);
+                }else{
+                    img_gray = img.clone();
                 }
-                img.convertTo(img, CV_64F, 1.0/255.0);
-                updateFrame(img);
+                img_gray.convertTo(img_gray, CV_64F, 1.0/255.0);
+                // qDebug() << "row: " << img_gray.rows;
+                // qDebug() << "col: " << img_gray.cols;
+                updateFrame(img_gray);
                 // cv::imshow("window", getLatestFrame());
                 // cv::waitKey(1);
             }
@@ -510,29 +507,6 @@ long BaslerCameraControl::GrabImage(QImage &image, int timeout)
     return 0;
 }
 
-void BaslerCameraControl::enableSaveDesiredImage(bool flag)
-{
-    this->flagSaveDesiredImage = flag;
-}
-
-void BaslerCameraControl::saveDesiredImage(const cv::Mat& img)
-{
-    this->image_desired_color = img.clone();
-    cv::imwrite("E:/QT/Microscopic_Visual_Servoing/resources/data/image_desired.png", this->image_desired_color);
-    cv::Mat img_gray;
-    if(img.channels() == 3){
-        cv::cvtColor(img, img_gray, cv::COLOR_BGR2GRAY);
-    }else{
-        img_gray = img.clone();
-    }
-    img_gray.convertTo(this->image_desired, CV_64F, 1.0/255.0);
-}
-
-cv::Mat&  BaslerCameraControl::getDesiredImage()
-{
-    return this->image_desired;
-}
-
 //Qimage 与 cv mat转换
 void BaslerCameraControl::qImageToCvMat(const QImage& qImage, cv::Mat & image)
 {
@@ -645,6 +619,11 @@ void BaslerCameraControl::updateFrame(const cv::Mat& newFrame) {
     int writeIndex = 1 - m_readIndex.load();
     this->img_vs[writeIndex] = newFrame.clone();
     m_readIndex.store(writeIndex);
+}
+
+ cv::Mat& BaslerCameraControl::getImage()
+{
+     return this->img;
 }
 
 int BaslerCameraControl::getFrameRate()

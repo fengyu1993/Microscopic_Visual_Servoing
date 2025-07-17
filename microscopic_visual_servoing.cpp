@@ -14,13 +14,15 @@ Microscopic_Visual_Servoing::Microscopic_Visual_Servoing(int resolution_x, int r
     this->image_gray_desired_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
     this->image_gray_current_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
     this->image_gray_error_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_64FC1);
+    this->image_desired_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_8UC3);
+    this->image_initial_ = Mat::zeros(this->resolution_y_, this->resolution_x_, CV_8UC3);
     this->object_velocity_ = Mat::zeros(6, 1, CV_64FC1);
     this->iteration_num_ = 0;
     this->Ad_Tbc_ = Mat::zeros(6, 6, CV_64FC1);
 }
 
 // 初始化
-void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& image_gray_desired, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Tbc)
+void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& image_desired, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Tbc)
 {
     this->lambda_ = lambda;
     this->epsilon_ = epsilon;
@@ -31,7 +33,7 @@ void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& im
     cv::Mat t_x_R = skewSymmetric(Tbc(cv::Rect(3, 0, 1, 3))) * Tbc(cv::Rect(0, 0, 3, 3));
     t_x_R.copyTo(this->Ad_Tbc_(cv::Rect(3, 0, 3, 3)));
 
-    set_image_gray_desired(image_gray_desired);
+    set_image_desired(image_desired);
     set_pose_desired(pose_desired);
     save_pose_desired();
 
@@ -102,9 +104,15 @@ bool Microscopic_Visual_Servoing::is_success()
 }
 
 // 设置期望灰度图像
-void Microscopic_Visual_Servoing::set_image_gray_desired(Mat& image_gray_desired)
+void Microscopic_Visual_Servoing::set_image_desired(Mat& image_desired)
 {
-    image_gray_desired.copyTo(this->image_gray_desired_);
+    this->image_desired_ = image_desired.clone();
+    if(image_desired.channels() == 3){
+        cv::cvtColor(image_desired, this->image_gray_desired_, cv::COLOR_BGR2GRAY);
+    }else{
+        this->image_gray_desired_ = image_desired.clone();
+    }
+    this->image_gray_desired_.convertTo(this->image_gray_desired_, CV_64F, 1.0/255.0);
 }
 
 // 设置当前灰度图像
@@ -114,10 +122,9 @@ void Microscopic_Visual_Servoing::set_image_gray_current(Mat& image_gray_current
 }
 
 // 设置初始图像
-void Microscopic_Visual_Servoing::set_image_gray_initial(const Mat& image_gray_initial)
+void Microscopic_Visual_Servoing::set_image_initial(Mat& image_initial)
 {
-    image_gray_initial.copyTo(this->image_gray_initial_);
-
+    this->image_initial_ = image_initial.clone();
 }
 
 // 保存期望位姿
@@ -137,9 +144,9 @@ void Microscopic_Visual_Servoing::save_pose_desired()
 void Microscopic_Visual_Servoing::save_data_image()
 {
     // 保存期望图像
-    this->image_gray_desired_.copyTo(this->data_vs_.image_gray_desired_);
+    this->data_vs_.image_desired_ = this->image_desired_.clone();
     // 保存初始图像
-    this->image_gray_initial_.copyTo(this->data_vs_.image_gray_init_);
+    this->data_vs_.image_init_ = this->image_initial_.clone();
 }
 
 // 保存相机速度
@@ -188,21 +195,20 @@ void Microscopic_Visual_Servoing::save_data_vs_time()
 
 
 // 将数据保存在文件中
-void Microscopic_Visual_Servoing::write_data()
+void Microscopic_Visual_Servoing::write_all_data(string location)
 {
     save_data_image();
     string file_name = get_save_file_name();
-    string location = "E:/QT/Microscopic_Visual_Servoing/resources/data/";
     // 保存图像
     string saveImage_desired = location + file_name + "_desired_image.png";
     string saveImage_initial = location + file_name + "_initial_image.png";
-    if(!this->data_vs_.image_gray_desired_.empty())
+    if(!this->data_vs_.image_desired_.empty())
     {
-        imwrite(saveImage_desired, this->data_vs_.image_gray_desired_*255);
+        imwrite(saveImage_desired, this->data_vs_.image_desired_);
     }
-    if(!this->data_vs_.image_gray_init_.empty())
+    if(!this->data_vs_.image_init_.empty())
     {
-        imwrite(saveImage_initial, this->data_vs_.image_gray_init_*255);
+        imwrite(saveImage_initial, this->data_vs_.image_init_);
     }
     // 保存数据
     ofstream oFile;

@@ -23,7 +23,8 @@ public:
     Mat image_gray_desired_;
     Mat image_gray_current_;
     Mat image_gray_error_;
-    Mat image_gray_initial_;
+    Mat image_desired_;
+    Mat image_initial_;
     camera_intrinsic camera_intrinsic_;
     Mat object_velocity_; // vx vy vz wx wy wz
     Mat pose_desired_;
@@ -43,15 +44,15 @@ public:
         Mat pose_;
         Mat pose_desired_;
         Mat error_feature_;
-        Mat image_gray_init_;
-        Mat image_gray_desired_;
+        Mat image_init_;
+        Mat image_desired_;
         Mat time_vs_;
     } data_vs_;
 
 public:
     Microscopic_Visual_Servoing(int resolution_x, int resolution_y);
 
-    void init_VS(double lambda, double epsilon, Mat& image_gray_desired, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Toc);
+    void init_VS(double lambda, double epsilon, Mat& image_desired, camera_intrinsic& camera_parameters, Mat pose_desired, Mat& Toc);
 
     Mat skewSymmetric(const Mat& v);
 
@@ -67,11 +68,11 @@ public:
 
     virtual void get_feature_error_interaction_matrix() = 0;
 
-    void set_image_gray_desired(Mat& image_gray_desired);
+    void set_image_desired(Mat& image_desired);
 
     void set_image_gray_current(Mat& image_gray_current);
 
-    void set_image_gray_initial(const Mat& image_gray_initial);
+    void set_image_initial(Mat& image_initial);
 
     void set_pose_desired(Mat& pose_desired);
 
@@ -93,7 +94,7 @@ public:
 
     void save_all_data(Mat pose);
 
-    void write_data();
+    void write_all_data(string location);
 
     void write_visual_servoing_data(ofstream& oFile);
 

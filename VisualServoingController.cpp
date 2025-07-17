@@ -20,10 +20,7 @@ VisualServoingController::VisualServoingController()
     thread_m_robot->start();
 
     QString imagePath = vs_parameter.resource_location +"/" + vs_parameter.image_desired_name;
-    // qDebug() << "imagePath: " << imagePath;
-    Mat image_desired_gray = imread(imagePath.toStdString(), cv::IMREAD_GRAYSCALE);
-    Mat image_desired;
-    image_desired_gray.convertTo(image_desired, CV_64F, 1.0/255.0);
+    Mat image_desired= imread(imagePath.toStdString(), cv::IMREAD_UNCHANGED);
     m_algorithm_DMVS = new Direct_Microscopic_Visual_Servoing(vs_parameter.resolution_x, vs_parameter.resolution_y);
     m_algorithm_DMVS->init_VS(vs_parameter.lambda, vs_parameter.epsilon, image_desired, vs_parameter.camera_parameters, vs_parameter.pose_desired, vs_parameter.Tbc);
 
@@ -94,17 +91,17 @@ void VisualServoingController::visualServoingControl()
             Mat plame_para;
             cv::divide(T_co(cv::Rect(2, 0, 1, 3)), T_co(cv::Rect(2, 0, 1, 3)).t() * T_co(cv::Rect(3, 0, 1, 3)), plame_para);
             m_algorithm_DMVS->updeta_planar_paramters(plame_para.at<double>(0,0), plame_para.at<double>(1,0), plame_para.at<double>(2,0));
-            // m_algorithm_DMVS->updeta_planar_paramters(0, 0, 1);
+            // m_algorithm_DMVS->updeta_planar_paramters(0, 0, 1/vs_parameter.camera_parameters.Z_f);
             // 获取最新图像
             m_algorithm_DMVS->image_gray_current_  = m_camera->getLatestFrame();
             if(flag_first_VS)
             {
-                m_algorithm_DMVS->set_image_gray_initial(m_algorithm_DMVS->image_gray_current_);
+                m_algorithm_DMVS->set_image_initial(m_camera->getImage());
                 flag_first_VS = false;
             }
-            cv::imshow("current", m_algorithm_DMVS->image_gray_current_);
-            cv::imshow("desired", m_algorithm_DMVS->image_gray_desired_);
-            cv::waitKey(1);
+            // cv::imshow("current", m_algorithm_DMVS->image_gray_current_);
+            // cv::imshow("desired", m_algorithm_DMVS->image_gray_desired_);
+            // cv::waitKey(1);
 
             // 计算控制输出
             Mat velocity = m_algorithm_DMVS->get_object_velocity();
@@ -114,7 +111,8 @@ void VisualServoingController::visualServoingControl()
             if(m_algorithm_DMVS->is_success() || m_algorithm_DMVS->iteration_num_ > vs_parameter.max_iteration)
             {
                 qDebug() << "Visual Servoing Finish";
-                m_algorithm_DMVS->write_data();
+                QString location = vs_parameter.resource_location + "/";
+                m_algorithm_DMVS->write_all_data(location.toStdString());
                 qDebug() << "Write Data Finish";
                 velocity = 0 * velocity;
                 stopServoing();
@@ -122,7 +120,7 @@ void VisualServoingController::visualServoingControl()
             }
             // // 执行机器人运动
             Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
-            velocity_eigen.head(3) = velocity_eigen.head(3) * 1e3; // 机器人控制平台单位：nm
+            velocity_eigen.head(3) = velocity_eigen.head(3); // 机器人控制平台单位：nm
             velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6; // 机器人控制平台单位：μ°
             // std::stringstream ss2;
             // ss2 << velocity_eigen;
