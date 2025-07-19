@@ -155,6 +155,10 @@ void MicroscopeCalibration::writeCalibrationData(const Calibration_Data& calibra
         write_to_excel(calibrationData.pointsPXYZMoveXYDp, oFile);
         oFile << "pointsPuvRotateZD0" << endl;
         write_to_excel(calibrationData.pointsPuvRotateZD0, oFile);
+        oFile << "radiusZMoveZ" << endl;
+        write_to_excel(calibrationData.radiusZMoveZ, oFile);
+        oFile << "rf" << endl;
+        write_to_excel((Mat_<double>(1,1)<<calibrationData.rf), oFile);
         oFile << "posesTsRotateZD0" << endl;
         for(int i = 0; i < calibrationData.posesTsRotateZD0.size(); i++)
         {

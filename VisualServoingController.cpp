@@ -2,7 +2,6 @@
 
 VisualServoingController::VisualServoingController()
 {
-
     if(read_vs_parameter(":/resources/data/VS_Parameter.csv")){
         output_vs_parameter();
         this->robotPoses.workPose = cvMatToEigenMatrix(vs_parameter.pose_work);
@@ -13,6 +12,7 @@ VisualServoingController::VisualServoingController()
     }
 
     this->m_camera = new BaslerCameraControl(20);
+
 
     this->m_robot = new  ParallelPlatform(20);
     QThread* thread_m_robot = new QThread();
@@ -126,10 +126,10 @@ void VisualServoingController::visualServoingControl()
             // ss2 << velocity_eigen;
             // qDebug() << "velocity:\n" << ss2.str().c_str();
 
-            // if(!m_robot-> setTargetVelocity(velocity_eigen)) {
-            //     emit servoingError("Robot movement failed");
-            //     return;
-            // }
+            if(!m_robot-> setTargetVelocity(velocity_eigen)) {
+                emit servoingError("Robot movement failed");
+                return;
+            }
             qDebug() << "error: " << m_algorithm_DMVS->cost_function_value_;
             qDebug() << "阈值: " << m_algorithm_DMVS->epsilon_;
             // 更新视觉伺服数据
@@ -204,9 +204,9 @@ void VisualServoingController::calibrationControl()
         Point center_image(cvRound(image.cols / 2), cvRound(image.rows / 2));
         int radius = cvRound(midifyCircle.at<double>(2, 0) );
         cv::cvtColor(src_8u, src_8u, cv::COLOR_GRAY2BGR);
-        circle(src_8u, center, radius, Scalar(0, 255, 0), 3);
-        circle(src_8u, center_image, 2, Scalar(255, 0, 0), 3);
-        circle(src_8u, center, 2, Scalar(0, 0, 255), 3);
+        circle(src_8u, center, radius, Scalar(0, 255, 0), cvRound(image.cols/256));
+        circle(src_8u, center_image, cvRound(image.cols/512), Scalar(255, 0, 0), cvRound(image.cols/256));
+        circle(src_8u, center, cvRound(image.cols/512), Scalar(0, 0, 255), cvRound(image.cols/256));
         // 输出显示
         QImage img =  this->m_camera->cvMatToQImage(src_8u);
         emit sigCalibrationImage(img);

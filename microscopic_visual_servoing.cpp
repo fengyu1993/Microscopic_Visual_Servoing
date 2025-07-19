@@ -31,7 +31,7 @@ void Microscopic_Visual_Servoing::init_VS(double lambda, double epsilon, Mat& im
     Tbc(cv::Rect(0, 0, 3, 3)).copyTo(this->Ad_Tbc_(cv::Rect(0, 0, 3, 3)));
     Tbc(cv::Rect(0, 0, 3, 3)).copyTo(this->Ad_Tbc_(cv::Rect(3, 3, 3, 3)));
     cv::Mat t_x_R = skewSymmetric(Tbc(cv::Rect(3, 0, 1, 3))) * Tbc(cv::Rect(0, 0, 3, 3));
-    t_x_R.copyTo(this->Ad_Tbc_(cv::Rect(3, 0, 3, 3)));
+    t_x_R.copyTo(this->Ad_Tbc_(cv::Rect(0, 3, 3, 3)));
 
     set_image_desired(image_desired);
     set_pose_desired(pose_desired);
@@ -66,8 +66,12 @@ Mat Microscopic_Visual_Servoing::get_object_velocity()
     Mat L_e_transpose = this->L_e_.t();
     Mat L_e_left_inverse = (L_e_transpose * this->L_e_ + 1e-6*Mat::eye(6, 6, CV_64F)).inv() * L_e_transpose;
     Mat velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
-    // velocity = (Mat_<double>(6, 1) << 0, 0, 0, 0, 0, 0.005); // μm/s,  °/s
+
+    velocity = (cv::Mat_<double>(6,1) << 15000, 0, 0, 0, 0, 0);
     this->object_velocity_ = this->Ad_Tbc_ * velocity;
+    cout << "velocity: \n" <<  velocity << endl;
+    cout << "Ad_Tbc_: \n" <<  Ad_Tbc_ << endl;
+    cout << "object_velocity_: \n" <<  object_velocity_ << endl;
     return this->object_velocity_;
 }
 
