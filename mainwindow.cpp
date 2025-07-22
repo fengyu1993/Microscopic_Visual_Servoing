@@ -49,8 +49,8 @@ void MainWindow::initUI()
 {
     this->linearVelocityStep = 10000.0;
     this->angularVelocityStep = 15000.0;
-    this->linearPositionStep = 5000.0;
-    this->angularPositionStep = 15000.0;
+    this->linearPositionStep = 15000.0;
+    this->angularPositionStep = 35000.0;
     this->m_visualServoingController->m_robot->setRobotMode(ROBOT_VELOCITY);
     this->ui->linear_velocity_step->setText(QString::number(this->linearVelocityStep));
     this->ui->angular_velocity_step->setText(QString::number(this->angularVelocityStep));
@@ -263,6 +263,8 @@ void MainWindow::updateVSVisualizationData(const QVariantMap& visData)
         double wx = visData.value("velocity_wx").toDouble();
         double wy = visData.value("velocity_wy").toDouble();
         double wz = visData.value("velocity_wz").toDouble();
+
+        qDebug() << "wz: " << wz;
 
         getdateSeries(BlueSeries_FeatureError, time, cost, cost_min, cost_max);
         updateChart(ui->charts_feature_error, time, cost_min, cost_max);

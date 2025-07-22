@@ -41,6 +41,9 @@ void ParallelPlatform::update()
 {
     // 关于x y z rx ry rz的更新
     result_ = Narpod_GetPosition(ntHandle_,&positionx_,&positiony_,&positionz_,&rotationx_,&rotationy_,&rotationz_);
+
+    // qDebug() << "ntHandle_:" << ntHandle_;
+
     Eigen::VectorXd Tlist(6);
     Tlist(0) = positionx_; Tlist(1) = positiony_; Tlist(2) = positionz_;
     Tlist(3) = rotationx_; Tlist(4) = rotationy_; Tlist(5) = rotationz_;

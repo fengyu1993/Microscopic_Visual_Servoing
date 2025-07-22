@@ -89,10 +89,12 @@ void Direct_Microscopic_Visual_Servoing::get_interaction_matrix_gray()
             L_e_col6.at<double>(i) = L_Ic_wz.at<double>(i);
         }
     });
+    // this->L_e_.col(0).setTo(0);
+    // this->L_e_.col(1).setTo(0);
     this->L_e_.col(2).setTo(0);
     this->L_e_.col(3).setTo(0);
     this->L_e_.col(4).setTo(0);
-    this->L_e_.col(5).setTo(0);
+    // this->L_e_.col(5).setTo(0);
 }
 
 // 计算矩阵u方向上的梯度

@@ -120,11 +120,11 @@ void VisualServoingController::visualServoingControl()
             }
             // // 执行机器人运动
             Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
-            velocity_eigen.head(3) = velocity_eigen.head(3); // 机器人控制平台单位：nm
-            velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6; // 机器人控制平台单位：μ°
-            // std::stringstream ss2;
-            // ss2 << velocity_eigen;
-            // qDebug() << "velocity:\n" << ss2.str().c_str();
+            velocity_eigen.head(3) = velocity_eigen.head(3) * 10; // 机器人控制平台单位：nm
+            velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6 * 10; // 机器人控制平台单位：μ°
+            std::stringstream ss2;
+            ss2 << velocity_eigen;
+            qDebug() << "velocity:\n" << ss2.str().c_str();
 
             if(!m_robot-> setTargetVelocity(velocity_eigen)) {
                 emit servoingError("Robot movement failed");
@@ -347,7 +347,9 @@ Vec3f VisualServoingController::checkBestCircle(Mat img)
 {
     medianBlur(img, img, 5);
     Mat fixed_thresh;
-    cv::threshold(img, fixed_thresh, 25, 255, THRESH_BINARY);
+    double minVal, maxVal;
+    cv::minMaxLoc(img, &minVal, &maxVal);
+    cv::threshold(img, fixed_thresh, minVal + maxVal / 5, 255, THRESH_BINARY);
     vector<Vec3f> circles;
     HoughCircles(fixed_thresh, circles, HOUGH_GRADIENT, 1,
                  1000,  // 两个圆之间的最小距离
