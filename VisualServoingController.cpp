@@ -120,28 +120,28 @@ void VisualServoingController::visualServoingControl()
             }
             // // 执行机器人运动
             Eigen::VectorXd velocity_eigen = Eigen::Map<Eigen::VectorXd>(const_cast<double*>(velocity.ptr<double>(0)),velocity.rows);
-            velocity_eigen.head(3) = velocity_eigen.head(3) * 10; // 机器人控制平台单位：nm
-            velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6 * 10; // 机器人控制平台单位：μ°
+            velocity_eigen.head(3) = velocity_eigen.head(3); // 机器人控制平台单位：nm
+            velocity_eigen.tail(3) = velocity_eigen.tail(3) * 1e6; // 机器人控制平台单位：μ°
             std::stringstream ss2;
             ss2 << velocity_eigen;
             qDebug() << "velocity:\n" << ss2.str().c_str();
 
             if(!m_robot-> setTargetVelocity(velocity_eigen)) {
                 emit servoingError("Robot movement failed");
-                return;
-            }
+                return;}
+
             qDebug() << "error: " << m_algorithm_DMVS->cost_function_value_;
             qDebug() << "阈值: " << m_algorithm_DMVS->epsilon_;
             // 更新视觉伺服数据
             QVariantMap visData;
             visData["loop_time"] = QVariant::fromValue(cycleTimer.elapsed());
             visData["feature_error"] = m_algorithm_DMVS->cost_function_value_;
-            visData["velocity_vx"] = velocity.at<double>(0);
-            visData["velocity_vy"] = velocity.at<double>(1);
-            visData["velocity_vz"] = velocity.at<double>(2);
-            visData["velocity_wx"] = velocity.at<double>(3);
-            visData["velocity_wy"] = velocity.at<double>(4);
-            visData["velocity_wz"] = velocity.at<double>(5);
+            visData["velocity_vx"] = velocity_eigen(0);
+            visData["velocity_vy"] = velocity_eigen(1);
+            visData["velocity_vz"] = velocity_eigen(2);
+            visData["velocity_wx"] = velocity_eigen(3);
+            visData["velocity_wy"] = velocity_eigen(4);
+            visData["velocity_wz"] = velocity_eigen(5);
             emit updateVisualServoingData(visData);
         } catch (const std::exception &e) {
             emit servoingError(QString("Control cycle error: %1").arg(e.what()));
@@ -409,10 +409,10 @@ void VisualServoingController::saveRobotPoses()
     ofstream oFile;
     string excel_name = location + file_name + ".xls";
     oFile.open(excel_name, ios::out|ios::trunc);
-    oFile << "workPose" << endl;
-    write_to_excel(this->robotPoses.workPose, oFile);
-    oFile << "desiredPose" << endl;
+    oFile << "pose_desired" << endl;
     write_to_excel(this->robotPoses.desiredPose, oFile);
+    oFile << "pose_work" << endl;
+    write_to_excel(this->robotPoses.workPose, oFile);
     oFile.close();
 }
 

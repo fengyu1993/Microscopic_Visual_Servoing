@@ -64,10 +64,11 @@ Mat Microscopic_Visual_Servoing::get_object_velocity()
     Mat L_e_transpose = this->L_e_.t();
     Mat L_e_left_inverse = (L_e_transpose * this->L_e_ + 1e-6*Mat::eye(6, 6, CV_64F)).inv() * L_e_transpose;
     Mat velocity = -this->lambda_ * L_e_left_inverse * this->error_s_;
-    // velocity = (cv::Mat_<double>(6,1) << 0, 5500, 0, 0, 0, 0);
+    velocity = (cv::Mat_<double>(6,1) << 0, 0, 0, 0, 0, 9000*1e-6); // v: 10000 nm/s; w: 9000*1e-6 rad/s
     this->object_velocity_ = this->Ad_Tbc_ * velocity;
-     // cout << "velocity = \n" << velocity.t();
-     //  cout << "object_velocity_ = \n" << this->object_velocity_.t();
+    // cout  << "Ad_Tbc_ = \n" << this->Ad_Tbc_ << endl;
+    // cout << "velocity = \n" << velocity.t() << endl;
+    // cout << "object_velocity_ = \n" << this->object_velocity_.t() << endl;
     return this->object_velocity_;
 }
 
